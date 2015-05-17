@@ -36,31 +36,19 @@ bool GameManager::checkWinDrawCondition(Player p)
     if((_board[1][1] != OPEN) &&
        ((_board[0][0] == _board[1][1] && _board[0][0] == _board[2][2]) ||
        (_board[0][2] == _board[1][1] && _board[0][2] == _board[2][0])))
-    {
-        if (p == PLAYER_X)
-            _state = WIN_X;
-        else //p == PLAYER_Y
-            _state = WIN_Y;
-    }
+        _state = (p == PLAYER_X ? WIN_X : WIN_Y);
 
     //check row/col
     for (int i = 0; i < 3 && !gameOverState(); i++)
-    {
         if((_board[i][i] != OPEN) &&
            ((_board[i][0] == _board[i][1] && _board[i][0] == _board[i][2])||
            (_board[0][i] == _board[1][i] && _board[0][i] == _board[2][i])))
-        {
-            if (p == PLAYER_X)
-                _state = WIN_X;
-            else //p == PLAYER_Y
-                _state = WIN_Y;
-        }
-    }
+            _state = (p == PLAYER_X ? WIN_X : WIN_Y);
 
     if (!anyOpen())
         _state = DRAW;
 
-    return (_state == PLAYING || _state == STARTING);
+    return (_state == WIN_X || _state == WIN_Y || _state == DRAW);
 }
 
 bool GameManager::makeMove(Player p, int row, int col)
@@ -71,5 +59,6 @@ bool GameManager::makeMove(Player p, int row, int col)
         _board[row][col] = (p == PLAYER_X ? USED_X : USED_O);
         valid = true;
     }
+
     return valid;
 }
