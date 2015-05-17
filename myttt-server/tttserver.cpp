@@ -1,20 +1,21 @@
 #include "tttserver.h"
 #include <QThreadPool>
 
+#include <QJsonValue>
+#include <QJsonObject>
+#include <QJsonDocument>
+
 //debug include
 #include <QDebug>
 
 TTTServer::TTTServer(QObject *parent)
-    : QObject(parent), _byteBuffer(nullptr),
-      _docObject(nullptr), _docHelper(nullptr), _clientList(nullptr),
-      _gameMap(nullptr), _address(nullptr), _addressLength(0),
-      _addressInfoPtr(NULL), _addressInfoList(NULL)
+    : QObject(parent), _running(false), _byteBuffer(nullptr),
+      _clientList(nullptr), _gameMap(nullptr), _address(nullptr),
+      _addressLength(0), _addressInfoPtr(NULL), _addressInfoList(NULL)
 {
     for (int i = 0; i < BUFFER_MAX; i++)
         _basicBuffer[i] = '\0';
     _byteBuffer = new QByteArray();
-    _docObject = new QJsonObject();
-    _docHelper = new QJsonDocument();
     _clientList = new QList<ClientObject>();
     _gameMap = new QMap<int, GameManager>();
 
@@ -63,6 +64,9 @@ TTTServer::TTTServer(QObject *parent)
     //largest descriptor
     _fdMax = _listener;
 
+    //ready to run
+    _running = true;
+
     //server listener prepared, begin server thread
     QThreadPool::globalInstance()->start(this);
 }
@@ -73,9 +77,76 @@ TTTServer::~TTTServer()
 
 void TTTServer::run()
 {
+    int newDescriptor = 0;
+    int selectVal = 0;
+    int readBytes = 0;
+    fd_set readers;
+
+    FD_ZERO(&readers);
+
     while(_running)
     {
+        //grab master view for select
+        readers = _master;
 
+        if ((selectVal = select(_fdMax + 1, &readers, NULL, NULL, NULL)) == -1)
+        {
+            //are we just kidding?
+            if (errno == EINTR)
+                continue;
+            else
+            {//an actual error
+                perror("Error on select call...");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        for (int i = 0; i < _fdMax; i++)
+        {
+            if (FD_ISSET(i, &readers))
+            {
+                if (i == _listener)
+                {//got new connection
+                    if ((newDescriptor = accept(_listener, NULL, NULL)) < 0)
+                    {
+                        perror("Error on accept call...");
+                        exit(EXIT_FAILURE);
+                    }
+
+                    //insert descriptor to master list
+                    FD_SET(newDescriptor, &_master);
+
+                    //keep track of highest value descriptor
+                    if (newDescriptor > _fdMax)
+                        _fdMax = newDescriptor;
+                }//end new connection
+                else
+                {//client sent a message
+                    readBytes = recv(i, _basicBuffer, BUFFER_MAX, 0);
+                    if (readBytes <= 0)
+                    {
+                        if (readBytes == 0)
+                        {//send out any special close signals
+
+                        }
+                        else if (readBytes < 0)
+                        {
+                            perror("Error on recv call...");
+                        }
+                        close(i);
+                        FD_CLR(i, &_master);
+                    }
+                    else if (readBytes == BUFFER_MAX)
+                    {//need to handle more reading
+                        //try recv again?
+                    }
+                    else
+                    {//usual case, got expected amounts of data
+                        processMessage(/*_basicBuffer*/);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -112,9 +183,50 @@ void TTTServer::setupServer()
         perror("Error on getaddrinfo...");
         exit(EXIT_FAILURE);
     }
+
+    //QString does deep copy
+    _hostname = buffHelper;
+    free(buffHelper);
+    buffHelper = nullptr;
 }
 
+void TTTServer::processMessage()
+{
+    QJsonDocument doc;
+    QJsonObject obj;
 
+    //deep copy the recv message
+    _byteBuffer->resize(strlen(_basicBuffer));
+    qstrcpy(_byteBuffer->data(), _basicBuffer);
+    doc = QJsonDocument::fromBinaryData(*_byteBuffer);
+    obj = doc.object();
+
+    CommHeader command = (CommHeader) obj["CommHeader"].toInt();
+
+    switch(command)
+    {
+        case JOIN:
+        {
+            break;
+        }
+        case LIST:
+        {
+            break;
+        }
+        case LEAVE:
+        {
+            break;
+        }
+        case INVITE:
+        {
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+}
 
 
 

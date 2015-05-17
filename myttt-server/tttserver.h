@@ -15,8 +15,6 @@
 #include <QMap>
 #include <QObject>
 #include <QRunnable>
-#include <QJsonObject>
-#include <QJsonDocument>
 
 //ttt includes
 #include "gamemanager.h"
@@ -44,8 +42,6 @@ private:
     char                        _basicBuffer[BUFFER_MAX];
     bool                        _running;
     QByteArray             *    _byteBuffer;
-    QJsonObject            *    _docObject;
-    QJsonDocument          *    _docHelper;
     QList<ClientObject>    *    _clientList;
     QMap<int, GameManager> *    _gameMap;
 
@@ -62,6 +58,7 @@ private:
 
     //private methods
     void setupServer();
+    void processMessage();
 
 };
 
