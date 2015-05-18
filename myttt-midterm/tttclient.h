@@ -21,6 +21,7 @@ public:
 
 signals:
 
+
 public slots:
 
 protected:
@@ -28,6 +29,10 @@ protected:
 
 private:
     //private data members
+    QList<QString> * _onlineUsers;
+
+    //private methods
+    void setupClient();
 
 };
 

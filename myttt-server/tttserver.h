@@ -15,6 +15,8 @@
 #include <QMap>
 #include <QObject>
 #include <QRunnable>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 //ttt includes
 #include "gamemanager.h"
@@ -58,7 +60,14 @@ private:
 
     //private methods
     void setupServer();
-    void processMessage();
+    void processMessage(int dataSocket);
+    void updateAllList();
+
+    //private command methods
+    void addUser(int clientSock, QJsonObject & obj);
+    void sendList(int clientSock);
+    void removeUser(int clientSock, QJsonObject & obj);
+    void inviteUser(int clientSock, QJsonObject & obj);
 
 };
 

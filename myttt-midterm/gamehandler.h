@@ -2,6 +2,7 @@
 #define GAMEHANDLER_H
 
 #include <QObject>
+#include <QString>
 
 enum GameState
 {
@@ -40,6 +41,8 @@ private:
     int         _associatedGameID;
     int         _playerXID;
     int         _playerOID;
+    QString     _playerXName;
+    QString     _playerYName;
     GameState   _lastState;
     TileState   _boardView[3][3];
 

@@ -42,7 +42,7 @@ enum Piece
 typedef struct
 {
     int             _id;/* indexable id */
-    int             _gameID;/* id of game, if ENGAGED */
+    int             _gameID;/* id of game, if ENGAGED: -1 if not in game */
     int             _socketID;/* socket descriptor */
     QString         _username;/* client specified username */
     ClientState     _state;

@@ -1,10 +1,6 @@
 #include "tttserver.h"
 #include <QThreadPool>
 
-#include <QJsonValue>
-#include <QJsonObject>
-#include <QJsonDocument>
-
 //debug include
 #include <QDebug>
 
@@ -89,6 +85,7 @@ void TTTServer::run()
         //grab master view for select
         readers = _master;
 
+        //we only need to worry about readers
         if ((selectVal = select(_fdMax + 1, &readers, NULL, NULL, NULL)) == -1)
         {
             //are we just kidding?
@@ -142,7 +139,7 @@ void TTTServer::run()
                     }
                     else
                     {//usual case, got expected amounts of data
-                        processMessage(/*_basicBuffer*/);
+                        processMessage(i/*_basicBuffer*/);
                     }
                 }
             }
@@ -190,7 +187,7 @@ void TTTServer::setupServer()
     buffHelper = nullptr;
 }
 
-void TTTServer::processMessage()
+void TTTServer::processMessage(int dataSocket)
 {
     QJsonDocument doc;
     QJsonObject obj;
@@ -207,26 +204,62 @@ void TTTServer::processMessage()
     {
         case JOIN:
         {
+            addUser(dataSocket, obj);
             break;
         }
         case LIST:
         {
+            sendList(dataSocket);
             break;
         }
         case LEAVE:
         {
+            removeUser(dataSocket, obj);
             break;
         }
         case INVITE:
         {
+            inviteUser(dataSocket, obj);
             break;
         }
         default:
         {
+            qDebug() << "Unrecognized command header...";
             break;
         }
     }
 }
 
+void TTTServer::updateAllList()
+{
 
+}
+
+void TTTServer::addUser(int clientSock, QJsonObject & obj)
+{
+    ClientObject co;
+
+    co._id = (int) obj["ClientID"].toInt();
+    co._gameID = -1;
+    co._socketID = clientSock;
+    co._username = (QString) obj["Username"].toString();
+    co._state = CONNECTED;
+
+    _clientList->append(co);
+}
+
+void TTTServer::sendList(int clientSock)
+{
+
+}
+
+void TTTServer::removeUser(int clientSock, QJsonObject & obj)
+{
+
+}
+
+void TTTServer::inviteUser(int clientSock, QJsonObject & obj)
+{
+
+}
 

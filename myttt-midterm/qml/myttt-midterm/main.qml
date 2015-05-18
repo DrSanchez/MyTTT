@@ -5,8 +5,27 @@ Rectangle
     id: mainContainer
     width: ScreenWidth * 0.3
     height: ScreenHeight * 0.6
+    color: "gray"
 
-    StartScreen{id: startScreen}
-    LobbyScreen{id: lobbyScreen}
+    Component.onCompleted:
+    {
+        startScreen.visible = true;
+    }
+
+    StartScreen
+    {
+        id: startScreen
+        visible: false
+    }
+    LobbyScreen
+    {
+        id: lobbyScreen
+        visible: false
+    }
+    GameScreen
+    {
+        id: gameScreen
+        visible: false
+    }
 
 }
