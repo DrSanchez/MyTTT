@@ -25,7 +25,7 @@
 #define LISTEN_QUEUE        10
 #define DEF_HOSTNAME_MAX    256
 
-class TTTServer : public QObject, QRunnable
+class TTTServer : public QObject, public QRunnable
 {
     Q_OBJECT
 public:

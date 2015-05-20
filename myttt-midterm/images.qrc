@@ -2,5 +2,8 @@
     <qresource prefix="/images">
         <file>images/o_piece.png</file>
         <file>images/x_piece.png</file>
+        <file>images/error_icon.png</file>
+        <file>images/information_icon.png</file>
+        <file>images/warning_icon.png</file>
     </qresource>
 </RCC>

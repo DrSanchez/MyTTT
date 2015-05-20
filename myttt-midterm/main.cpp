@@ -4,6 +4,9 @@
 #include <QtGui/QGuiApplication>
 #include "qtquick2applicationviewer.h"
 
+//user objects
+#include "tttclient.h"
+
 int main(int argc, char *argv[])
 {
     int screenWidth = 0;
@@ -25,12 +28,18 @@ int main(int argc, char *argv[])
         screenHeight = screen->availableGeometry().height();
     }
 
+    TTTUser * user = new TTTUser();
+    TTTClient * client = new TTTClient(user);
+
+
+    viewer.engine()->rootContext()->setContextProperty("Client", client);
+
     //expose properties to qml
     viewer.engine()->rootContext()->setContextProperty("ShowFullscreen", showFullscreen);
     viewer.engine()->rootContext()->setContextProperty("ScreenWidth", screenWidth);
     viewer.engine()->rootContext()->setContextProperty("ScreenHeight", screenHeight);
 
-    viewer.setMainQmlFile(QStringLiteral("qml/myttt-midterm/main.qml"));
+    viewer.setMainQmlFile(QStringLiteral("qml/main.qml"));
     viewer.showExpanded();
 
     return app.exec();

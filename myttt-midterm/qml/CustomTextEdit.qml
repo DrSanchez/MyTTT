@@ -12,6 +12,7 @@ Rectangle
     border.color: "black"
 
     property string pLabel: "";
+    property string pText: customTextEdit.text
 
     Text
     {

@@ -69,7 +69,16 @@ Rectangle
         MouseArea
         {
             anchors.fill: parent
-            onClicked: console.log("Clicked Join");
+            onClicked:
+            {
+                Client.validateServerIp(ipEdit.pText);
+                //Client.setupClient();
+                Client.validateUsername(usernameEdit.pText);
+                //Client.sendUserToServer();
+
+                //we successfully "logged in"
+                mainContainer.nextAppState = "LOBBY";
+            }
         }
     }
 

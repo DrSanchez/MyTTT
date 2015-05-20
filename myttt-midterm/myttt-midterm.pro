@@ -1,7 +1,7 @@
 # Add more folders to ship with the application, here
-folder_01.source = qml/myttt-midterm
-folder_01.target = qml
-DEPLOYMENTFOLDERS = folder_01
+#folder_01.source = qml/
+#folder_01.target = qml
+#DEPLOYMENTFOLDERS = folder_01
 
 # Adds Cx11 support, e.g. nullptr...
 CONFIG   += c++11 (Qt5)
@@ -29,8 +29,13 @@ HEADERS += \
 
 INCLUDEPATH += $${_PRO_FILE_PWD_}/../myttt-common/
 
-OTHER_FILES += \
-    qml/myttt-midterm/LobbyScreen.qml
+OTHER_FILES += qml/main.qml \
+    qml/CustomTextEdit.qml \
+    qml/GameScreen.qml \
+    qml/GeneralButton.qml \
+    qml/InfoDialog.qml \
+    qml/LobbyScreen.qml \
+    qml/StartScreen.qml
 
 RESOURCES += \
     images.qrc

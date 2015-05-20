@@ -32,6 +32,8 @@ class GameHandler : public QObject
 public:
     explicit GameHandler(QObject *parent = 0);
 
+    bool validateMove(int row, int col);
+
 signals:
 
 public slots:
