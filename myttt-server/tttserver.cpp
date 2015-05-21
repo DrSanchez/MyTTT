@@ -35,6 +35,7 @@ TTTServer::TTTServer(QObject *parent)
             continue;
         }
 
+        qDebug() << "Got a listener...";
         break;
     }
 
@@ -53,6 +54,8 @@ TTTServer::TTTServer(QObject *parent)
         perror("Error in listen...");
         exit(EXIT_FAILURE);
     }
+
+    qDebug() << "Listening...";
 
     //add listener to master set of descriptors
     FD_SET(_listener, &_master);
@@ -80,6 +83,8 @@ void TTTServer::run()
 
     FD_ZERO(&readers);
 
+    qDebug() << "Server thread running...";
+
     while(_running)
     {
         //grab master view for select
@@ -98,17 +103,24 @@ void TTTServer::run()
             }
         }
 
+        qDebug() << "Selected something...";
+
         for (int i = 0; i < _fdMax; i++)
         {
             if (FD_ISSET(i, &readers))
             {
                 if (i == _listener)
                 {//got new connection
+
+                    qDebug() << "Found a new connection...";
+
                     if ((newDescriptor = accept(_listener, NULL, NULL)) < 0)
                     {
                         perror("Error on accept call...");
                         exit(EXIT_FAILURE);
                     }
+
+                    qDebug() << "Accepted new connection...";
 
                     //insert descriptor to master list
                     FD_SET(newDescriptor, &_master);
@@ -175,11 +187,14 @@ void TTTServer::setupServer()
     hint.ai_addr = NULL;
     hint.ai_next = NULL;
     
-    if ((errorVal = getaddrinfo(buffHelper, "42040", &hint, &_addressInfoList)) != 0)
+    if ((errorVal = getaddrinfo(buffHelper, TTT_PORT, &hint, &_addressInfoList)) != 0)
     {
+        qDebug() << "getaddrinfo error: " << gai_strerror(errorVal);
         perror("Error on getaddrinfo...");
         exit(EXIT_FAILURE);
     }
+
+    qDebug() << "Got the address info...";
 
     //QString does deep copy
     _hostname = buffHelper;

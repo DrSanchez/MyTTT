@@ -36,12 +36,21 @@ Rectangle
     {
         target: Client
 
-        onInvalidServerIp: infoDialog.showBox(3, "Invalid Server Ip",
-          "Server connection attempt timed out. Please check that" +
-         " you have correctly entered the server address and try again.")
-
         onInvalidUsername: infoDialog.showBox(2, "Invalid Username",
           "This username is already in use, please try another...");
+
+        onServerFailedToConnect: infoDialog.showBox(3, "Cannot Connect To Server",
+          "Unable to connect to server socket. Exceeded timeout attempts. Please" +
+          " check the Ip address and try again");
+
+        onAddressInfoFailure: infoDialog.showBox(3, "Address Identification Failure",
+          "Could not resolve the address info for the given Ip address. Please check" +
+          " that the provided address is correct and try again.");
+
+        onServerConnected:
+        {
+
+        }
     }
 
     Component.onCompleted:

@@ -7,6 +7,8 @@
 #include <QString>
 #include <QJsonDocument>
 
+#define TTT_PORT "42040"
+
 /* client state filter */
 enum ClientState
 {

@@ -71,13 +71,9 @@ Rectangle
             anchors.fill: parent
             onClicked:
             {
-                Client.validateServerIp(ipEdit.pText);
-                //Client.setupClient();
-                Client.validateUsername(usernameEdit.pText);
-                //Client.sendUserToServer();
-
-                //we successfully "logged in"
-                mainContainer.nextAppState = "LOBBY";
+                if(Client.validateServerIp(ipEdit.pText))
+                    if(Client.validateUsername(usernameEdit.pText))
+                        mainContainer.nextAppState = "LOBBY";
             }
         }
     }
