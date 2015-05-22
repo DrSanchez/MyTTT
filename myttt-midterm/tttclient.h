@@ -5,7 +5,9 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 
 //ttt common
 //#include "TTTNetworkedDef.h"
@@ -16,6 +18,8 @@
 
 //qt includes
 #include <QObject>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 class TTTClient : public QObject
 {
@@ -52,8 +56,8 @@ private:
 
     //private methods
     bool setupClient();
-    bool tryConnect(int domain, int type, int protocol,
-        const struct sockaddr * address, socklen_t addressLength);
+    bool requestUserList();
+    bool tryConnect(int domain, int type, int protocol, sockaddr *address);
 
 };
 

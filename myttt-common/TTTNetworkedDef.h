@@ -1,11 +1,7 @@
 #ifndef TTTNETWORKEDDEF_H
 #define TTTNETWORKEDDEF_H
 
-//unix includes
-
-//qt includes
 #include <QString>
-#include <QJsonDocument>
 
 #define TTT_PORT "42040"
 

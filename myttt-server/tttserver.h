@@ -53,13 +53,9 @@ private:
     int                 _serverSocket;
     fd_set              _master;
     QString             _hostname;
-    struct sockaddr *   _address;
-    socklen_t           _addressLength;
-    struct addrinfo *   _addressInfoPtr;
-    struct addrinfo *   _addressInfoList;
+    struct sockaddr_in * _setup;
 
     //private methods
-    void setupServer();
     void processMessage(int dataSocket);
     void updateAllList();
 

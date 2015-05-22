@@ -24,89 +24,89 @@ bool TTTClient::validateUsername(QString username)
 
 bool TTTClient::validateServerIp(QString ip)
 {
+    bool result = false;
     _ip = ip;
     if (setupClient())
     {
         //call up user list from server
+        qDebug() << "Client should be connected...";
+        result = true;
     }
     else
     {
         //error
         qDebug() << "Fall through, error in alert notification...";
-        return false;
+        result = false;
     }
-
-    //should not reach this point
-    return false;
+    return result;
 }
 
 bool TTTClient::validateMove(int row, int col)
 {
-
+    return _gameView->validateMove(row, col);
 }
 
 bool TTTClient::setupClient()
 {
-    struct addrinfo * addressInfoList, * addressInfoPtr;
-    struct addrinfo hint;
-    int error = 0;
+    struct sockaddr_in * serverSetup;
 
-    memset(&hint, 0, sizeof(hint));
-    hint.ai_socktype = SOCK_STREAM;
-    hint.ai_canonname = NULL;
-    hint.ai_addr = NULL;
-    hint.ai_next = NULL;
+    serverSetup = (struct sockaddr_in *)malloc(sizeof(serverSetup));
+    serverSetup->sin_family = AF_INET;
+    serverSetup->sin_addr.s_addr = htonl(inet_network(_ip.toStdString().data()));
+    serverSetup->sin_port = htons(42040);
 
-    QByteArray ipForC = _ip.toLatin1();
-    char * ip = ipForC.data();
-    if ((error = getaddrinfo(ip, TTT_PORT, &hint, &addressInfoList)) < 0)
+
+    if (tryConnect(serverSetup->sin_family, SOCK_STREAM, 0, (struct sockaddr *)serverSetup))
     {
-        qDebug() << "Error getting address info..." << TTT_PORT;
-        qDebug() << "getaddrinfo error: " << gai_strerror(error);
-        emit addressInfoFailure();
-        return false;
+        //we have connected
+        //notify connect
+        return true;
     }
-
-    for (addressInfoPtr = addressInfoList; addressInfoPtr != NULL; addressInfoPtr = addressInfoPtr->ai_next)
+    else
     {
-        if (tryConnect(addressInfoPtr->ai_family, SOCK_STREAM, 0, addressInfoPtr->ai_addr, addressInfoPtr->ai_addrlen))
-        {
-            //we have connected
-            //notify connect
-            return true;
-        }
-        else
-        {
-            emit serverFailedToConnect();
-            return false;
-        }
+        emit serverFailedToConnect();
+        return false;
     }
 
     //should not reach this point
     return false;
 }
 
-bool TTTClient::tryConnect(int domain, int type, int protocol,
-    const struct sockaddr * address, socklen_t addressLength)
+bool TTTClient::tryConnect(int domain, int type, int protocol, struct sockaddr * address)
 {
     int milliseconds = 40;
+    bool connected = false;
 
     qDebug() << "Domain: " << domain;
     qDebug() << "Type: " << type;
     qDebug() << "Protocol: " << protocol;
 
-    for (int numberTimeouts = (2500 / milliseconds); numberTimeouts > 0; numberTimeouts--)
+    for (int numberTimeouts = (2500 / milliseconds); numberTimeouts > 0 && !connected; numberTimeouts--)
     {
-        if ((_clientDescriptor = socket(domain, type, protocol)) < 0)
+        if ((_clientDescriptor = socket(domain, type, protocol)) >= 0)
         {
-            qDebug() << "Got socket from server...";
             //qobject overrides global connect method from unix sockets
-            if (::connect(_clientDescriptor, address, addressLength) == 0)
-                return true;
-            else
-                return false;
+            if (::connect(_clientDescriptor, address, sizeof(*address)) >= 0)
+                connected = true;
         }
         QThread::msleep(milliseconds);
     }
-    return false;
+    return connected;
 }
+
+bool TTTClient::requestUserList()
+{
+    bool result = false;
+    QJsonObject obj;
+    QJsonDocument doc;
+
+    return result;
+}
+
+
+
+
+
+
+
+

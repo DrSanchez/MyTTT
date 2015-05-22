@@ -6,8 +6,7 @@
 
 TTTServer::TTTServer(QObject *parent)
     : QObject(parent), _running(false), _byteBuffer(nullptr),
-      _clientList(nullptr), _gameMap(nullptr), _address(nullptr),
-      _addressLength(0), _addressInfoPtr(NULL), _addressInfoList(NULL)
+      _clientList(nullptr), _gameMap(nullptr)
 {
     for (int i = 0; i < BUFFER_MAX; i++)
         _basicBuffer[i] = '\0';
@@ -15,38 +14,27 @@ TTTServer::TTTServer(QObject *parent)
     _clientList = new QList<ClientObject>();
     _gameMap = new QMap<int, GameManager>();
 
-    //run the setup pre-listener
-    setupServer();
+    _setup = (struct sockaddr_in *)malloc(sizeof(_setup));
+    _setup->sin_family = AF_INET;
+    _setup->sin_addr.s_addr = htonl(INADDR_ANY);
+    _setup->sin_port = htons(42040);
 
-    //setup listeners
-    for (_addressInfoPtr = _addressInfoList; _addressInfoPtr != NULL; _addressInfoPtr = _addressInfoPtr->ai_next)
+
+    if ((_listener = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-        _listener = socket(_addressInfoPtr->ai_family, _addressInfoPtr->ai_socktype, _addressInfoPtr->ai_protocol);
-
-        //this listener didnt work
-        if (_listener < 0) {continue;}
-
+        qDebug() << "Error creating listener...";
+    }
+    else
+    {
         int yes = 1;//magic for following call....
         setsockopt(_listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
-        if (bind(_listener, _addressInfoPtr->ai_addr, _addressInfoPtr->ai_addrlen) < 0)
+        if (bind(_listener, (struct sockaddr *)_setup, sizeof(*_setup)) < 0)
         {//this listener didnt work
             close(_listener);
-            continue;
+            qDebug() << "Failed to bind listener...";
         }
-
-        qDebug() << "Got a listener...";
-        break;
     }
-
-    if (_addressInfoPtr == NULL)
-    {
-        perror("Server failed to bind...");
-        exit(EXIT_FAILURE);
-    }
-
-    //no longer need this
-    freeaddrinfo(_addressInfoList);
 
     //time to start initial listening
     if (listen(_listener, LISTEN_QUEUE) == -1)
@@ -62,7 +50,7 @@ TTTServer::TTTServer(QObject *parent)
 
     //largest descriptor
     _fdMax = _listener;
-
+    qDebug() << "Listener descriptor: " << _listener;
     //ready to run
     _running = true;
 
@@ -103,9 +91,7 @@ void TTTServer::run()
             }
         }
 
-        qDebug() << "Selected something...";
-
-        for (int i = 0; i < _fdMax; i++)
+        for (int i = 0; i < _fdMax + 1; i++)
         {
             if (FD_ISSET(i, &readers))
             {
@@ -128,6 +114,7 @@ void TTTServer::run()
                     //keep track of highest value descriptor
                     if (newDescriptor > _fdMax)
                         _fdMax = newDescriptor;
+                    qDebug() << "New maxFD: " << _fdMax;
                 }//end new connection
                 else
                 {//client sent a message
@@ -136,7 +123,6 @@ void TTTServer::run()
                     {
                         if (readBytes == 0)
                         {//send out any special close signals
-
                         }
                         else if (readBytes < 0)
                         {
@@ -157,49 +143,6 @@ void TTTServer::run()
             }
         }
     }
-}
-
-void TTTServer::setupServer()
-{
-    int hostLength = 0, errorVal = 0;
-    struct addrinfo hint;
-    char * buffHelper = nullptr;
-
-    if ((hostLength = sysconf(_SC_HOST_NAME_MAX)) < 0)
-        hostLength = DEF_HOSTNAME_MAX;
-
-    if ((buffHelper = (char *)malloc(hostLength)) == NULL)
-    {
-        perror("Error on malloc...");
-        exit(EXIT_FAILURE);
-    }
-    
-    if (gethostname(buffHelper, hostLength) < 0)
-    {
-        perror("Error on gethostname...");
-        exit(EXIT_FAILURE);
-    }
-
-    memset(&hint, 0, sizeof(hint));
-    hint.ai_flags = AI_CANONNAME;
-    hint.ai_socktype = SOCK_STREAM;
-    hint.ai_canonname = NULL;
-    hint.ai_addr = NULL;
-    hint.ai_next = NULL;
-    
-    if ((errorVal = getaddrinfo(buffHelper, TTT_PORT, &hint, &_addressInfoList)) != 0)
-    {
-        qDebug() << "getaddrinfo error: " << gai_strerror(errorVal);
-        perror("Error on getaddrinfo...");
-        exit(EXIT_FAILURE);
-    }
-
-    qDebug() << "Got the address info...";
-
-    //QString does deep copy
-    _hostname = buffHelper;
-    free(buffHelper);
-    buffHelper = nullptr;
 }
 
 void TTTServer::processMessage(int dataSocket)
