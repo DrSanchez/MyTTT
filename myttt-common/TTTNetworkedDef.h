@@ -14,18 +14,28 @@ enum ClientState
     DISCONNECTING/* user left, cleanup */
 };
 
-/* first byte of any server request */
+/* first byte of any client request to server */
 enum CommHeader
 {
     JOIN,
     LIST,
     LEAVE,
-    INVITE
+    INVITE,
+    ACCEPTINVITE
+};
+
+/* first byte of any server response to client */
+enum ServerResponse
+{
+    ACCEPTEDCLIENT,
+    USERLIST,
+    CLIENTLEFT
 };
 
 /* commands used when client is ENGAGED */
 enum GameCommands
 {
+    MAKEMOVE
 
 };
 

@@ -6,7 +6,11 @@ Rectangle
     width: parent.width * 0.63
     height: parent.height * 0.125
     radius: 100
-    color: "gray"
+    gradient: Gradient {
+        GradientStop { position: 0.2; color: "light gray" }
+        GradientStop { position: 0.5; color: "dark gray" }
+        GradientStop { position: 0.8; color: "gray" }
+    }
     border.width: 2
     border.color: "black"
 
@@ -18,6 +22,6 @@ Rectangle
         anchors.centerIn: parent
         font.pixelSize: parent.width * 0.16
         text: pText
-        color: "light gray"
+        color: "#111111"
     }
 }

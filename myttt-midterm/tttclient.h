@@ -40,11 +40,12 @@ signals:
     void addressInfoFailure();
     void serverFailedToConnect();
 
-    /* called by server when a new client logs on */
-    void onUpdateClientList(QList<QString> * list);
+    //server signals
+
 
 public slots:
-    
+    //client responses
+
 
 private:
     //private data members
@@ -55,6 +56,8 @@ private:
     QList<QString> * _onlineUsers;
 
     //private methods
+    bool sendAll(QByteArray bytes);
+    bool sendUser();
     bool setupClient();
     bool requestUserList();
     bool tryConnect(int domain, int type, int protocol, sockaddr *address);

@@ -53,7 +53,7 @@ Rectangle
     {
         id: ipEdit
         anchors.top: usernameEdit.bottom
-        anchors.topMargin: usernameEdit.height * 0.3
+        anchors.topMargin: usernameEdit.height * 0.325
         anchors.horizontalCenter: parent.horizontalCenter
         pLabel: "Server IP:"
     }
@@ -71,8 +71,8 @@ Rectangle
             anchors.fill: parent
             onClicked:
             {
-                if(Client.validateServerIp(ipEdit.pText))
-                    if(Client.validateUsername(usernameEdit.pText))
+//                if(Client.validateServerIp(ipEdit.pText))
+//                    if(Client.validateUsername(usernameEdit.pText))
                         mainContainer.nextAppState = "LOBBY";
             }
         }

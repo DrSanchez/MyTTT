@@ -19,7 +19,10 @@ bool TTTClient::validateUsername(QString username)
         return false;
     }
     else
+    {
+        _localUser->setUsername(username);
         return true;
+    }
 }
 
 bool TTTClient::validateServerIp(QString ip)
@@ -99,14 +102,72 @@ bool TTTClient::requestUserList()
     bool result = false;
     QJsonObject obj;
     QJsonDocument doc;
+    QByteArray bytes;
+    
+    obj["CommHeader"] = LIST;
+    
+    doc.setObject(obj);
+    bytes = doc.toBinaryData();
+    
+    if (!sendAll(bytes))
+    {
+        //error
+        qDebug() << "Error sending all bytes...";
+        result = false;
+    }
+    else
+        result = true;
 
     return result;
 }
 
+bool TTTClient::sendUser()
+{
+    bool result = false;
+    QJsonObject obj;
+    QJsonDocument doc;
+    QByteArray bytes;
 
+    obj["CommHeader"] = JOIN;
+    obj["Username"] = _localUser->username();
 
+    doc.setObject(obj);
+    bytes = doc.toBinaryData();
 
+    if (!sendAll(bytes))
+    {
+        //error
+        qDebug() << "Error sending all bytes...";
+        result = false;
+    }
+    else
+        result = true;
 
+    return result;
+}
+
+bool TTTClient::sendAll(QByteArray bytes)
+{
+    bool success = true;
+    int bytesWritten = 0;
+    int bytesReturned = 0;
+    int messageFullLength = bytes.length();
+    do
+    {
+        bytesReturned = send(_clientDescriptor, bytes.data(), bytes.length(), 0);
+        
+        if (bytesReturned < 0)
+        {
+            success = false;
+            break;
+        }
+        bytesWritten += bytesReturned;
+        if (bytesWritten < messageFullLength)
+            bytes.remove(0, bytesWritten - 1);
+    } while (bytesWritten < messageFullLength && success);
+    
+    return success;
+}
 
 
 

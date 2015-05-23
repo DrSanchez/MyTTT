@@ -19,7 +19,8 @@ Rectangle
         }
         else if (nextAppState == "STARTING")
         {
-
+            lobbyScreen.visible = false;
+            startScreen.visible = true;
         }
         else if (nextAppState == "LOBBY")
         {
