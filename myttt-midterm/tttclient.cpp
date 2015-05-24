@@ -49,6 +49,32 @@ bool TTTClient::validateMove(int row, int col)
     return _gameView->validateMove(row, col);
 }
 
+bool TTTClient::challengeUser(QString challengedUser)
+{
+    bool result = false;
+//    QJsonObject obj;
+//    QJsonDocument doc;
+//    QByteArray bytes;
+
+//    obj["CommHeader"] = INVITE;
+//    obj["Inviter"] = _localUser->username();
+//    obj["Invitee"] = challengedUser;
+
+//    doc.setObject(obj);
+//    bytes = doc.toBinaryData();
+
+//    if (!sendAll(bytes))
+//    {
+//        //error
+//        qDebug() << "Error sending all bytes...";
+//        result = false;
+//    }
+//    else
+        result = true;
+
+    return result;
+}
+
 bool TTTClient::setupClient()
 {
     struct sockaddr_in * serverSetup;

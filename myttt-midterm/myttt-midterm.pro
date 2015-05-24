@@ -36,7 +36,8 @@ OTHER_FILES += qml/main.qml \
     qml/InfoDialog.qml \
     qml/LobbyScreen.qml \
     qml/StartScreen.qml \
-    qml/UserItem.qml
+    qml/UserItem.qml \
+    qml/Tile.qml
 
 RESOURCES += \
     images.qrc

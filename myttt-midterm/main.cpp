@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
 
 
     viewer.engine()->rootContext()->setContextProperty("Client", client);
+    viewer.engine()->rootContext()->setContextProperty("LocalUser", user);
 
     //expose properties to qml
     viewer.engine()->rootContext()->setContextProperty("ShowFullscreen", showFullscreen);

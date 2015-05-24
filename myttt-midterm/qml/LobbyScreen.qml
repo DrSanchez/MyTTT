@@ -45,11 +45,23 @@ Rectangle
         anchors.top: headerContainer.bottom
         anchors.horizontalCenter: parent.horizontalCenter
         z: headerContainer.z - 1
-        color: "black"
+        color: "transparent"
         border.width: 3
         border.color: "black"
-        radius: 35
+        radius: 25
         clip: true
+
+        function sendChallenge(userToChallenge)
+        {
+            if (Client.challengeUser(userToChallenge))
+            {//pop wait on invite message
+                //if receive response
+                    //true == open game screen
+                //else
+                    //false == close message and return to lobby
+                mainContainer.nextAppState = "GAME";
+            }
+        }
 
         ListView
         {
@@ -58,7 +70,7 @@ Rectangle
             model: userListModel
             orientation: Qt.Vertical
             verticalLayoutDirection: ListView.TopToBottom
-
+            clip: true
             delegate: UserItem{}
         }
 
@@ -71,11 +83,12 @@ Rectangle
             ListElement
             {
                 username: "User1"
-                //engagedFlag: false //or true
+                engagedFlag: false //or true
             }
             ListElement
             {
-                username: "User2"
+                username: "UsernameLongOne"
+                engagedFlag: true //or false
             }
         }
     }

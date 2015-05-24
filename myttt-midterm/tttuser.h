@@ -27,6 +27,9 @@ public:
     //client is allowed to set his own name
     void setUsername(QString name);
 
+    //client is told what piece they are
+    void setPiece(QString piece);//"X" or "O"
+
 signals:
     void idChanged();
     void gameIdChanged();
@@ -42,6 +45,9 @@ private:
     int             _socketID;/* socket descriptor */
     QString         _username;/* client specified username */
     ClientState     _state;
+
+    //player piece
+    QString         _piece;
 
     //only the server will ever update this values
     void setId(int id);

@@ -52,6 +52,13 @@ void TTTUser::setUsername(QString name)
     }
 }
 
+void TTTUser::setPiece(QString piece)
+{
+    if (piece == "X" || piece == "O")
+        _piece = piece;
+    //else do nothing
+}
+
 void TTTUser::setClientState(ClientState state)
 {
     if (_state != state)

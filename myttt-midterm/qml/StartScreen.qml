@@ -21,7 +21,6 @@ Rectangle
         width: parent.width * 0.8
         height: parent.height * 0.2
         radius: 25
-        opacity: 0.7
         gradient: Gradient {
             GradientStop { position: 0.1; color: "dark blue" }
             GradientStop { position: 0.8; color: "blue" }

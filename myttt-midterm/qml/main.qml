@@ -29,7 +29,8 @@ Rectangle
         }
         else if (nextAppState == "GAME")
         {
-
+            lobbyScreen.visible = false;
+            gameScreen.visible = true;
         }
     }
 

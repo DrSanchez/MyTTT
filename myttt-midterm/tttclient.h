@@ -32,6 +32,7 @@ public:
     Q_INVOKABLE bool validateUsername(QString username);
     Q_INVOKABLE bool validateMove(int row, int col);
     Q_INVOKABLE bool validateServerIp(QString ip);
+    Q_INVOKABLE bool challengeUser(QString challengedUser);
 
 signals:
     //qml interface signals
