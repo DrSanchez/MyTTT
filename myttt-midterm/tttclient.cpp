@@ -5,9 +5,24 @@
 #include <QThread>
 
 TTTClient::TTTClient(TTTUser * user, QObject *parent)
-    : QObject(parent), _localUser(user), _onlineUsers(nullptr)
+    : QObject(parent), _localUser(user), _localTurn(false),
+      _onlineUsers(nullptr)
 {
     _onlineUsers = new QList<QString>();
+}
+
+bool TTTClient::localTurn()
+{
+    return _localTurn;
+}
+
+void TTTClient::setLocalTurn(bool turn)
+{
+    if (_localTurn != turn)
+    {
+        _localTurn = turn;
+        emit localTurnChanged();
+    }
 }
 
 bool TTTClient::validateUsername(QString username)

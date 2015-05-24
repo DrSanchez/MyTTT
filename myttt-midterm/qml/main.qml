@@ -19,16 +19,19 @@ Rectangle
         }
         else if (nextAppState == "STARTING")
         {
+            gameScreen.visible = false;
             lobbyScreen.visible = false;
             startScreen.visible = true;
         }
         else if (nextAppState == "LOBBY")
         {
             startScreen.visible = false;
+            gameScreen.visible = false;
             lobbyScreen.visible = true;
         }
         else if (nextAppState == "GAME")
         {
+            startScreen.visible = false;
             lobbyScreen.visible = false;
             gameScreen.visible = true;
         }

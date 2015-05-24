@@ -25,6 +25,11 @@ ClientState TTTUser::state()
     return _state;
 }
 
+QString TTTUser::piece()
+{
+    return _piece;
+}
+
 void TTTUser::setId(int id)
 {
     if (_id != id)
@@ -54,9 +59,14 @@ void TTTUser::setUsername(QString name)
 
 void TTTUser::setPiece(QString piece)
 {
-    if (piece == "X" || piece == "O")
-        _piece = piece;
-    //else do nothing
+    if (_piece != piece)
+    {
+        if (piece == "X" || piece == "O")
+        {
+            _piece = piece;
+            emit pieceChanged();
+        }
+    }
 }
 
 void TTTUser::setClientState(ClientState state)

@@ -14,6 +14,7 @@ class TTTUser : public QObject
     Q_PROPERTY(int gameId READ gameId NOTIFY gameIdChanged)
     Q_PROPERTY(QString username READ username WRITE setUsername NOTIFY usernameChanged)
     Q_PROPERTY(ClientState state READ state NOTIFY stateChanged)
+    Q_PROPERTY(QString piece READ piece WRITE setPiece NOTIFY pieceChanged)
 
 public:
     explicit TTTUser(QObject *parent = 0);
@@ -23,6 +24,7 @@ public:
     int gameId();
     QString username();
     ClientState state();
+    QString piece();
 
     //client is allowed to set his own name
     void setUsername(QString name);
@@ -35,6 +37,7 @@ signals:
     void gameIdChanged();
     void usernameChanged();
     void stateChanged();
+    void pieceChanged();
 
 public slots:
 

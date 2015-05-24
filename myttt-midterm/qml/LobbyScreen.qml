@@ -55,6 +55,9 @@ Rectangle
         {
             if (Client.challengeUser(userToChallenge))
             {//pop wait on invite message
+
+                //challenger is always "X"
+                LocalUser.piece = "O";
                 //if receive response
                     //true == open game screen
                 //else

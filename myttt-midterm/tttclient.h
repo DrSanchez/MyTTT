@@ -25,6 +25,8 @@ class TTTClient : public QObject
 {
     Q_OBJECT
 
+    Q_PROPERTY(bool localTurn READ localTurn NOTIFY localTurnChanged)
+
 public:
     explicit TTTClient(TTTUser * user, QObject *parent = 0);
 
@@ -34,12 +36,18 @@ public:
     Q_INVOKABLE bool validateServerIp(QString ip);
     Q_INVOKABLE bool challengeUser(QString challengedUser);
 
+    //property getters
+    bool localTurn();
+
 signals:
     //qml interface signals
     void invalidUsername();
     void serverConnected();
     void addressInfoFailure();
     void serverFailedToConnect();
+
+    //property signals
+    void localTurnChanged();
 
     //server signals
 
@@ -51,6 +59,7 @@ public slots:
 private:
     //private data members
     int              _clientDescriptor;
+    bool             _localTurn;
     QString          _ip;
     TTTUser        * _localUser;
     GameHandler    * _gameView;
@@ -61,6 +70,7 @@ private:
     bool sendUser();
     bool setupClient();
     bool requestUserList();
+    void setLocalTurn(bool turn);
     bool tryConnect(int domain, int type, int protocol, sockaddr *address);
 
 };

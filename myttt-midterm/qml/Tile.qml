@@ -3,7 +3,7 @@ import QtQuick 2.0
 Item
 {
     id: tileContainer
-    visible: false
+    state: ""
 
     signal clicked
 
@@ -22,6 +22,7 @@ Item
             {
                 target: tileImage
                 source: "../images/x_piece.png"
+                width: tileContainer.width * 0.785
             }
         },
         State
@@ -31,6 +32,7 @@ Item
             {
                 target: tileImage
                 source: "../images/o_piece.png"
+                width: tileContainer.width * 0.725
             }
         }
     ]
@@ -38,6 +40,6 @@ Item
     MouseArea
     {
         anchors.fill: parent
-        onClicked: parent.clicked()
+        onClicked: tileContainer.clicked()
     }
 }
