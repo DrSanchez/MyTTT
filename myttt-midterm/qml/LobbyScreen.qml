@@ -20,6 +20,11 @@ Rectangle
         {
             userListModel.append({"username":name, "engagedFlag":engaged})
         }
+
+        onResetUserList:
+        {
+            userListModel.clear();
+        }
     }
 
     Rectangle
@@ -99,11 +104,6 @@ Rectangle
         ListModel
         {
             id: userListModel
-            ListElement
-            {
-                username: "temp"
-                engagedFlag: false
-            }
         }
     }
 

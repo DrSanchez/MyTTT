@@ -18,6 +18,7 @@
 
 //qt includes
 #include <QObject>
+#include <QRunnable>
 #include <QByteArray>
 #include <QJsonValue>
 #include <QJsonObject>
@@ -25,7 +26,7 @@
 
 #define BUFFER_MAX          1024
 
-class TTTClient : public QObject
+class TTTClient : public QObject, public QRunnable
 {
     Q_OBJECT
 
@@ -44,6 +45,7 @@ public:
 
 signals:
     //qml interface signals
+    void resetUserList();
     void invalidUsername();
     void serverConnected();
     void addressInfoFailure();
@@ -59,11 +61,14 @@ signals:
 public slots:
     //client responses
 
+protected:
+    void run();
 
 private:
     //private data members
     int              _clientDescriptor;
     bool             _localTurn;
+    bool             _running;
     QString          _ip;
     TTTUser        * _localUser;
     QByteArray     * _byteBuffer;
@@ -72,13 +77,14 @@ private:
 
     //private methods
     void cleanup();
-    bool sendAll(QByteArray &bytes);
     bool sendUser();
     bool setupClient();
     bool waitForRequest();
     bool requestUserList();
     void setLocalTurn(bool turn);
     void processServerResponse();
+    bool sendAll(QByteArray &bytes);
+    void clearBuffer(char * buffer);
     bool tryConnect(int domain, int type, int protocol, sockaddr *address);
 
     //server response methods

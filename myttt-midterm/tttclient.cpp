@@ -3,9 +3,11 @@
 #include <QTimer>
 #include <QDebug>
 #include <QThread>
+#include <QThreadPool>
 
+static int message_count = 0;
 TTTClient::TTTClient(TTTUser * user, QObject *parent)
-    : QObject(parent), _localTurn(false), _localUser(user),
+    : QObject(parent), _localTurn(false), _running(false), _localUser(user),
       _byteBuffer(nullptr), _gameView(nullptr), _onlineUsers(nullptr)
 {
     _byteBuffer = new QByteArray();
@@ -13,6 +15,7 @@ TTTClient::TTTClient(TTTUser * user, QObject *parent)
     _gameView = new GameHandler(this);
 }
 
+//this method performs the server handshaking on startup
 bool TTTClient::waitForRequest()
 {
     int selectVal = 0;
@@ -45,8 +48,8 @@ bool TTTClient::waitForRequest()
         {
             receivedSomething = true;
             readBytes = recv(_clientDescriptor, buffer, BUFFER_MAX, 0);
-            qDebug() << "Bytes read: " << readBytes;
-            qDebug() << "Bytes: " << buffer;
+            message_count++;
+            qDebug() << "Message Count: " << message_count;
             if (readBytes < 0)
             {//error
                 qDebug() << "Error on recv...";
@@ -89,8 +92,83 @@ bool TTTClient::waitForRequest()
     }
     if (actualError)
         return actualError;
-    _byteBuffer->clear();
     return receivedSomething;
+}
+
+//this method keeps the reader thread alive
+void TTTClient::run()
+{
+    int selectVal = 0;
+    int readBytes = 0;
+    char buffer[BUFFER_MAX] = { '\0' };
+    fd_set reader;
+
+    FD_ZERO(&reader);
+    FD_SET(_clientDescriptor, &reader);
+    _byteBuffer->clear();
+
+    while (_running)
+    {
+        FD_ZERO(&reader);
+        FD_SET(_clientDescriptor, &reader);
+        _byteBuffer->clear();
+        clearBuffer(buffer);
+        if ((selectVal = select(_clientDescriptor + 1, &reader, NULL, NULL, NULL)) == -1)
+        {
+            //just kidding?
+            if (errno == EINTR)
+                continue;
+            else
+            {//actual error
+                qDebug() << "Error on select call...";
+            }
+        }
+
+        //no need to loop through set, we know we will only hear from one socket
+        if (FD_ISSET(_clientDescriptor, &reader))
+        {
+            readBytes = recv(_clientDescriptor, buffer, BUFFER_MAX, 0);
+            message_count++;
+            qDebug() << "Message Count: " << message_count;
+            if (readBytes < 0)
+            {//error
+                qDebug() << "Error on recv...";
+                perror("Recv error...");
+            }
+            else if (readBytes == 0)
+            {//end of file, server must have closed
+                cleanup();
+            }
+            else if (readBytes >= BUFFER_MAX)
+            {//cant ever be greater, but we could handle with same logic
+                char * bufferCollector;
+
+                //deep copy the recv message
+                _byteBuffer->resize(qstrlen(buffer));
+                qstrcpy(_byteBuffer->data(), buffer);
+
+                //won't ever actually be greater than max, but QByteArray could handle the case
+                while (readBytes >= BUFFER_MAX)
+                {
+                    readBytes = recv(_clientDescriptor, buffer, BUFFER_MAX, 0);
+
+                    //ensure any fragmented messages are all deep copied into our buffers
+                    bufferCollector = new char[_byteBuffer->size() + qstrlen(buffer) + 1];
+                    qstrcpy(bufferCollector, _byteBuffer->data());
+                    strcat(bufferCollector, buffer);
+                    _byteBuffer->resize(qstrlen(bufferCollector));
+                    qstrcpy(_byteBuffer->data(), bufferCollector);
+                }
+                processServerResponse();
+            }
+            else //if (readBytes < BUFFER_MAX)
+            {//we probably got a full message
+                _byteBuffer->resize(qstrlen(buffer) + 1);
+                qstrcpy(_byteBuffer->data(), buffer);
+                processServerResponse();
+            }
+        }
+    }
 }
 
 void TTTClient::cleanup()
@@ -129,6 +207,7 @@ bool TTTClient::validateServerIp(QString ip, QString username)
                 emit invalidUsername();
                 return false;
             }
+            emit newUser(_localUser->username(), (_localUser->gameId() == -1 ? false : true));
             if (requestUserList())
             {
                 //gotta wait to hear back...
@@ -136,6 +215,9 @@ bool TTTClient::validateServerIp(QString ip, QString username)
                     return false;
                 else
                     result = true;
+                //we are ready to begin monitoring for communications
+                _running = true;
+                QThreadPool::globalInstance()->start(this);
             }
         }
     }
@@ -347,6 +429,9 @@ void TTTClient::handleUserList(QJsonObject & obj)
     }
     else
     {
+        //reset UI and stored list, updating from full server list
+        emit resetUserList();
+        _onlineUsers->clear();
         for (int i = 0; i < userList.length(); i++)
         {
             _onlineUsers->append(userList.at(i));
@@ -364,14 +449,21 @@ void TTTClient::handleAcceptedClient(QJsonObject & obj)
 {
     qDebug() << "Do we get to handle accept client?";
     QString clientName = obj["Username"].toString();
-
+qDebug() << _localUser->username() << "between" << clientName;
     //we are the accepted client, but our name was not unique, update it with server change
     if (clientName.contains(_localUser->username()) && clientName != _localUser->username())
         _localUser->setUsername(clientName);
     else if (clientName != _localUser->username())//we want to add this client to our lists
     {
+        qDebug() << "Adding user: " << clientName;
         _onlineUsers->append(clientName);
         emit newUser(clientName, false);
     }
     //else the local user doesnt do anything except change menus
+}
+
+void TTTClient::clearBuffer(char * buffer)
+{
+    for (int i = 0; i < BUFFER_MAX; i++)
+        buffer[i] = '\0';
 }

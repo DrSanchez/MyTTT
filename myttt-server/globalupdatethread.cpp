@@ -34,10 +34,13 @@ void GlobalUpdateThread::run()
     for (int sock : *_socketsToSend)
     {
         qDebug() << "Sending globally to socket: " << sock;
-        QByteArray temp(_bytes->data());
+        QByteArray temp;
+        temp.resize(messageFullLength + 1);
+        qstrcpy(temp.data(), _bytes->data());
 
         while (bytesWritten < messageFullLength && !error)
         {
+            qDebug() << "Writing: " << temp;
             bytesReturned = send(sock, temp.data(), temp.length(), 0);
             if (bytesReturned < 0)
             {
