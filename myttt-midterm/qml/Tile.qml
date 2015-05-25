@@ -1,17 +1,29 @@
 import QtQuick 2.0
+import QtGraphicalEffects 1.0
 
 Item
 {
     id: tileContainer
     state: ""
 
-    signal clicked
+    signal activated
 
     Image
     {
         id: tileImage
         anchors.centerIn: parent
         fillMode: Image.PreserveAspectFit
+    }
+    DropShadow
+    {
+        id: shadow
+        anchors.fill: tileImage
+        horizontalOffset: 3
+        verticalOffset: 3
+        radius: 8.0
+        samples: 16
+        color: "#80000000"
+        source: tileImage
     }
 
     states: [
@@ -40,6 +52,6 @@ Item
     MouseArea
     {
         anchors.fill: parent
-        onClicked: tileContainer.clicked()
+        onClicked: tileContainer.activated();
     }
 }

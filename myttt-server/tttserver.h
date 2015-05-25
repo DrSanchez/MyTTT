@@ -14,12 +14,15 @@
 //qt includes
 #include <QMap>
 #include <QObject>
+#include <QVariant>
 #include <QRunnable>
+#include <QJsonValue>
 #include <QJsonObject>
 #include <QJsonDocument>
 
 //ttt includes
 #include "gamemanager.h"
+#include "globalupdatethread.h"
 
 #define BUFFER_MAX          1024
 #define LISTEN_QUEUE        10
@@ -33,37 +36,45 @@ public:
     ~TTTServer();
 
 signals:
+    void sendGlobalUpdate();
 
 public slots:
+    void issueGlobalUpdate();
 
 protected:
     void run();
 
 private:
     //private data members
-    char                        _basicBuffer[BUFFER_MAX];
-    bool                        _running;
-    QByteArray             *    _byteBuffer;
-    QList<ClientObject>    *    _clientList;
-    QMap<int, GameManager> *    _gameMap;
+    int                           _uniquifier;
+    char                          _basicBuffer[BUFFER_MAX];
+    bool                          _running;
+    QByteArray               *    _byteBuffer;
+    QList<ClientObject *>    *    _clientList;
+    QMap<int, GameManager>   *    _gameMap;
+    GlobalUpdateThread       *    _global;
 
     //unix sockets members
-    int                 _fdMax;
-    int                 _listener;
-    int                 _serverSocket;
-    fd_set              _master;
-    QString             _hostname;
+    int                  _fdMax;
+    int                  _listener;
+    int                  _serverSocket;
+    fd_set               _master;
+    QString              _hostname;
     struct sockaddr_in * _setup;
 
     //private methods
-    void processMessage(int dataSocket);
-    void updateAllList();
+    void clearBuffer();
+    void processMessage(ClientObject * client);
 
     //private command methods
+    bool sendAll(int receiver);
     void addUser(int clientSock, QJsonObject & obj);
     void sendList(int clientSock);
     void removeUser(int clientSock, QJsonObject & obj);
     void inviteUser(int clientSock, QJsonObject & obj);
+    void startGame(int clientSock, QJsonObject & obj);
+
+    ClientObject * findClientBySocket(int clientSock);
 
 };
 

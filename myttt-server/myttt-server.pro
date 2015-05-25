@@ -21,12 +21,12 @@ TEMPLATE = app
 SOURCES += main.cpp \
     tttserver.cpp \
     gamemanager.cpp \
-    tttrequestbase.cpp
+    globalupdatethread.cpp
 
 HEADERS += \
     tttserver.h \
     gamemanager.h \
-    tttrequestbase.h
+    globalupdatethread.h
 
 
 INCLUDEPATH += $${_PRO_FILE_PWD_}/../myttt-common/

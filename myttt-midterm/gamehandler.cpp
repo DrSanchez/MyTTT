@@ -1,5 +1,5 @@
 #include "gamehandler.h"
-
+#include <QDebug>
 GameHandler::GameHandler(QObject *parent)
     : QObject(parent)
 {
@@ -8,10 +8,17 @@ GameHandler::GameHandler(QObject *parent)
             _boardView[i][j] = OPEN;
 }
 
-bool GameHandler::validateMove(int row, int col)
+bool GameHandler::validateMove(int row, int col, QString symbol)
 {
-    if (_boardView[row][col] != OPEN)
-        return false;
+    bool result = false;
+
+    if (_boardView[row][col] == OPEN)
+    {
+        result = true;
+        _boardView[row][col] = (symbol.contains("X") ? USED_X : USED_O);
+    }
     else
-        return true;
+        result = false;
+
+    return result;
 }

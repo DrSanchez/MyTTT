@@ -10,7 +10,6 @@ class TTTUser : public QObject
 {
     Q_OBJECT
 
-    Q_PROPERTY(int id READ id NOTIFY idChanged)
     Q_PROPERTY(int gameId READ gameId NOTIFY gameIdChanged)
     Q_PROPERTY(QString username READ username WRITE setUsername NOTIFY usernameChanged)
     Q_PROPERTY(ClientState state READ state NOTIFY stateChanged)
@@ -20,7 +19,6 @@ public:
     explicit TTTUser(QObject *parent = 0);
 
     //getters for QML property interface
-    int id();
     int gameId();
     QString username();
     ClientState state();
@@ -33,7 +31,6 @@ public:
     void setPiece(QString piece);//"X" or "O"
 
 signals:
-    void idChanged();
     void gameIdChanged();
     void usernameChanged();
     void stateChanged();
@@ -43,7 +40,6 @@ public slots:
 
 private:
     //private data members
-    int             _id;/* indexable id */
     int             _gameID;/* id of game, if ENGAGED: -1 if not in game */
     int             _socketID;/* socket descriptor */
     QString         _username;/* client specified username */
@@ -53,7 +49,6 @@ private:
     QString         _piece;
 
     //only the server will ever update this values
-    void setId(int id);
     void setGameId(int id);
     void setClientState(ClientState state);
 

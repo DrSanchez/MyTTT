@@ -12,6 +12,16 @@ Rectangle
         GradientStop { position: 0.9; color: "black" }
     }
 
+    Connections
+    {
+        target: Client
+
+        onNewUser:
+        {
+            userListModel.append({"username":name, "engagedFlag":engaged})
+        }
+    }
+
     Rectangle
     {
         id: headerContainer
@@ -51,19 +61,28 @@ Rectangle
         radius: 25
         clip: true
 
+        //challengee will never call this
         function sendChallenge(userToChallenge)
         {
             if (Client.challengeUser(userToChallenge))
             {//pop wait on invite message
 
                 //challenger is always "X"
-                LocalUser.piece = "O";
+                LocalUser.piece = "X";
                 //if receive response
                     //true == open game screen
                 //else
                     //false == close message and return to lobby
                 mainContainer.nextAppState = "GAME";
             }
+        }
+
+        //challenger will never call this
+        function receivedChallenge(challenger)
+        {
+            //receiver of challenge is always "O"
+            LocalUser.piece = "O";
+            mainContainer.nextAppState = "GAME";
         }
 
         ListView
@@ -80,18 +99,10 @@ Rectangle
         ListModel
         {
             id: userListModel
-
-
-            //temporary to test delegate
             ListElement
             {
-                username: "User1"
-                engagedFlag: false //or true
-            }
-            ListElement
-            {
-                username: "UsernameLongOne"
-                engagedFlag: true //or false
+                username: "temp"
+                engagedFlag: false
             }
         }
     }

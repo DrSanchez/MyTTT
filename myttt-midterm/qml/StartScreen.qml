@@ -70,9 +70,8 @@ Rectangle
             anchors.fill: parent
             onClicked:
             {
-//                if(Client.validateServerIp(ipEdit.pText))
-//                    if(Client.validateUsername(usernameEdit.pText))
-                        mainContainer.nextAppState = "LOBBY";
+                if(Client.validateServerIp(ipEdit.pText, usernameEdit.pText))
+                    mainContainer.nextAppState = "LOBBY";
             }
         }
     }

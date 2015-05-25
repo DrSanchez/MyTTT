@@ -12,6 +12,8 @@ Rectangle
         GradientStop { position: 0.9; color: "black" }
     }
 
+    property string opponent: ""
+
     Board
     {
         id: board
@@ -31,6 +33,7 @@ Rectangle
             columns: 3
             columnSpacing: parent.height * 0.0225
             rowSpacing: parent.height * 0.0185
+            z: parent.z + 1
 
             Repeater
             {
@@ -41,9 +44,11 @@ Rectangle
                     width: boardView.width * 0.33
                     height: boardView.height * 0.33
 
-                    onClicked:
+                    onActivated:
                     {
-                        if (Client.validateMove((index % 3), (index - x) / 3))
+                        var row = (index % 3);
+                        var col = (index - row) / 3;
+                        if (Client.validateMove(row, col))
                         {
                             state = LocalUser.piece;
                         }
@@ -55,13 +60,28 @@ Rectangle
 
     Text
     {
+        id: opponentName
+        font.pixelSize: parent.width * 0.05
+        color: "yellow"
+        text: "Opponent: " + opponent
+        anchors.bottom: forfeitButtonUnderlay.top
+        anchors.bottomMargin: parent.height * 0.002
+        anchors.left: parent.left
+        anchors.leftMargin: parent.width * 0.005
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+    }
+
+    Text
+    {
         id: playerTurnText
-        font.pixelSize: parent.width * 0.065
+        font.pixelSize: parent.width * 0.05
         color: "yellow"
         text: "It's Your Turn!"
         anchors.bottom: forfeitButtonUnderlay.top
         anchors.bottomMargin: parent.height * 0.002
-        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.right: parent.right
+        anchors.rightMargin: parent.width * 0.005
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         //visible: Client.localTurn
