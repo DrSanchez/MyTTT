@@ -8,6 +8,7 @@ TTTClient::TTTClient(TTTUser * user, QObject *parent)
     : QObject(parent), _localTurn(false), _localUser(user),
       _byteBuffer(nullptr), _gameView(nullptr), _onlineUsers(nullptr)
 {
+    _byteBuffer = new QByteArray();
     _onlineUsers = new QList<QString>();
     _gameView = new GameHandler(this);
 }
@@ -49,6 +50,7 @@ bool TTTClient::waitForRequest()
             if (readBytes < 0)
             {//error
                 qDebug() << "Error on recv...";
+                perror("Recv error...");
                 actualError = true;
             }
             else if (readBytes == 0)
@@ -87,7 +89,7 @@ bool TTTClient::waitForRequest()
     }
     if (actualError)
         return actualError;
-
+    _byteBuffer->clear();
     return receivedSomething;
 }
 
@@ -272,7 +274,7 @@ bool TTTClient::sendUser()
 
 bool TTTClient::sendAll(QByteArray & bytes)
 {
-    bool success = true;
+    bool done = false;
     int bytesWritten = 0;
     int bytesReturned = 0;
     int messageFullLength = bytes.length();
@@ -283,15 +285,18 @@ bool TTTClient::sendAll(QByteArray & bytes)
         bytesReturned = send(_clientDescriptor, bytes.data(), bytes.length(), 0);
         if (bytesReturned < 0)
         {
-            success = false;
+            done = true;
             break;
         }
         bytesWritten += bytesReturned;
         if (bytesWritten < messageFullLength)
             bytes.remove(0, bytesReturned - 1);
         bytesReturned = 0;
-    } while (bytesWritten < messageFullLength && success);
-    return success;
+        if (bytesWritten == messageFullLength)
+            done = true;
+    } while (bytesWritten < messageFullLength && !done);
+
+    return done;
 }
 
 void TTTClient::processServerResponse()

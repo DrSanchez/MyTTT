@@ -63,7 +63,7 @@ private:
     struct sockaddr_in * _setup;
 
     //private methods
-    void clearBuffer();
+    void clearBuffer(char * buffer);
     void processMessage(ClientObject * client);
 
     //private command methods

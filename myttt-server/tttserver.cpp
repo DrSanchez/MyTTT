@@ -74,6 +74,7 @@ void TTTServer::run()
     int selectVal = 0;
     ssize_t readBytes = 0;
     fd_set readers;
+    char buffer[BUFFER_MAX] = { '\0' };
 
     FD_ZERO(&readers);
 
@@ -84,7 +85,7 @@ void TTTServer::run()
         //grab master view for select
         FD_ZERO(&readers);
         readers = _master;
-        clearBuffer();
+        clearBuffer(buffer);
         readBytes = 0;
 
         //we only need to worry about readers
@@ -127,8 +128,8 @@ void TTTServer::run()
         {
             if (FD_ISSET(looper->_socketID, &readers))
             {//client sent a message
-                readBytes = recv(looper->_socketID, _basicBuffer, BUFFER_MAX, 0);
-                qDebug() << "Another Received: " << _basicBuffer << readBytes;
+                readBytes = recv(looper->_socketID, buffer, BUFFER_MAX, 0);
+                qDebug() << "Another Received: " << buffer << readBytes;
                 if (readBytes <= 0)
                 {
                     if (readBytes == 0)
@@ -146,18 +147,18 @@ void TTTServer::run()
                     char * bufferCollector;
 
                     //deep copy the recv message
-                    _byteBuffer->resize(qstrlen(_basicBuffer));
-                    qstrcpy(_byteBuffer->data(), _basicBuffer);
+                    _byteBuffer->resize(qstrlen(buffer));
+                    qstrcpy(_byteBuffer->data(), buffer);
 
                     //won't ever actually be greater than max, but QByteArray could handle the case
                     while (readBytes >= BUFFER_MAX)
                     {
-                        readBytes = recv(looper->_socketID, _basicBuffer, BUFFER_MAX, 0);
+                        readBytes = recv(looper->_socketID, buffer, BUFFER_MAX, 0);
 
                         //ensure any fragmented messages are all deep copied into our buffers
-                        bufferCollector = new char[_byteBuffer->size() + qstrlen(_basicBuffer) + 1];
+                        bufferCollector = new char[_byteBuffer->size() + qstrlen(buffer) + 1];
                         qstrcpy(bufferCollector, _byteBuffer->data());
-                        strcat(bufferCollector, _basicBuffer);
+                        strcat(bufferCollector, buffer);
                         _byteBuffer->resize(qstrlen(bufferCollector));
                         qstrcpy(_byteBuffer->data(), bufferCollector);
                     }
@@ -166,8 +167,8 @@ void TTTServer::run()
                 else //readBytes < BUFFER_MAX
                 {//usual case, got expected amounts of data
                     //deep copy the recv message
-                    _byteBuffer->resize(qstrlen(_basicBuffer));
-                    qstrcpy(_byteBuffer->data(), _basicBuffer);
+                    _byteBuffer->resize(qstrlen(buffer));
+                    qstrcpy(_byteBuffer->data(), buffer);
                     processMessage(looper);
                 }
             }
@@ -349,8 +350,8 @@ bool TTTServer::sendAll(int receiver)
     return success;
 }
 
-void TTTServer::clearBuffer()
+void TTTServer::clearBuffer(char * buffer)
 {
     for (int i = 0; i < BUFFER_MAX; i++)
-        _basicBuffer[i] = '\0';
+        buffer[i] = '\0';
 }

@@ -18,6 +18,7 @@
 
 //qt includes
 #include <QObject>
+#include <QByteArray>
 #include <QJsonValue>
 #include <QJsonObject>
 #include <QJsonDocument>
