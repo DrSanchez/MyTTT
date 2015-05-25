@@ -35,6 +35,8 @@ public:
     explicit TTTServer(QObject *parent = 0);
     ~TTTServer();
 
+    void cleanupServer();
+
 signals:
     void sendGlobalUpdate();
 
@@ -70,7 +72,7 @@ private:
     bool sendAll(int receiver);
     void addUser(int clientSock, QJsonObject & obj);
     void sendList(int clientSock);
-    void removeUser(int clientSock, QJsonObject & obj);
+    void removeUser(int clientSock);
     void inviteUser(int clientSock, QJsonObject & obj);
     void startGame(int clientSock, QJsonObject & obj);
 

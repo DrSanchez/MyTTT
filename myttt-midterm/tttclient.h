@@ -26,6 +26,12 @@
 
 #define BUFFER_MAX          1024
 
+enum CleanupReason
+{
+    EOF_FROM_SERVER,
+    CLIENT_QUIT
+};
+
 class TTTClient : public QObject, public QRunnable
 {
     Q_OBJECT
@@ -39,6 +45,7 @@ public:
     Q_INVOKABLE bool validateMove(int row, int col);
     Q_INVOKABLE bool validateServerIp(QString ip, QString username);
     Q_INVOKABLE bool challengeUser(QString challengedUser);
+    Q_INVOKABLE void leaveLobby();
 
     //property getters
     bool localTurn();
@@ -56,7 +63,7 @@ signals:
 
     //server signals
     void newUser(QString name, bool engaged);
-
+    void removeUser(QString name);
 
 public slots:
     //client responses

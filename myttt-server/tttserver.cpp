@@ -4,6 +4,7 @@
 //debug include
 #include <QDebug>
 
+
 TTTServer::TTTServer(QObject *parent)
     : QObject(parent), _uniquifier(0), _running(false),
       _byteBuffer(nullptr), _clientList(nullptr), _gameMap(nullptr),
@@ -24,6 +25,7 @@ TTTServer::TTTServer(QObject *parent)
     _setup->sin_addr.s_addr = htonl(INADDR_ANY);
     _setup->sin_port = htons(42040);
 
+    //create tcp listener
     if ((_listener = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         qDebug() << "Error creating listener...";
@@ -64,8 +66,56 @@ TTTServer::TTTServer(QObject *parent)
     QThreadPool::globalInstance()->start(this);
 }
 
+void TTTServer::cleanupServer()
+{
+    ClientObject * cleaner = nullptr;
+
+    //stop server thread
+    _running = false;
+    //_global thread either isnt running, or will be done very shortly
+    QThreadPool::globalInstance()->waitForDone(5000);
+    //can safely force closures now
+
+    //no reason to be listening if we are dying
+    shutdown(_listener, 2);
+    close(_listener);
+
+    for (ClientObject * inner : *_clientList)
+    {
+        cleaner = inner;
+
+        shutdown(cleaner->_socketID, 2);//close in/out pipes
+        close(cleaner->_socketID);//we can now assume nothing will hold up close
+        //client should have received a 0-byte message to close and cleanup
+        delete cleaner;
+        cleaner = nullptr;
+        //go around for next client in list
+    }
+    _gameMap->clear();
+    delete _gameMap;
+    _gameMap = nullptr;
+    _clientList->clear();
+    delete _clientList;
+    _clientList = nullptr;
+    _byteBuffer->clear();
+    delete _byteBuffer;
+    _byteBuffer = nullptr;
+
+    //since we set autodelete = false,
+    delete _global;//we are responsible for deletion of runnable
+    _global = nullptr;
+
+    delete _setup;
+    _setup = nullptr;
+
+    FD_ZERO(&_master);
+    qDebug() << "Cleaned up successfully...";
+}
+
 TTTServer::~TTTServer()
 {
+    //can safely do nothing - protected by cleanup method
+    qDebug() << "Destructing nicely...";
 }
 
 void TTTServer::run()
@@ -201,7 +251,7 @@ void TTTServer::processMessage(ClientObject * client)
         }
         case LEAVE:
         {
-            removeUser(client->_socketID, obj);
+            removeUser(client->_socketID);
             break;
         }
         case INVITE:
@@ -289,17 +339,40 @@ void TTTServer::sendList(int clientSock)
     QVariant var1(userStatus);
     o["Statuslist"] = QJsonValue::fromVariant(var1);
 
-    qDebug() << "Client requested list of users...";
-
     d.setObject(o);
     *_byteBuffer = d.toJson();
     if (!sendAll(clientSock))
         qDebug() << "Error sending user list...";
 }
 
-void TTTServer::removeUser(int clientSock, QJsonObject & obj)
+void TTTServer::removeUser(int clientSock)
 {
+    ClientObject * user;
+    if ((user = findClientBySocket(clientSock)) != nullptr)
+    {//error socket not in list, should not occur
 
+    }
+    QJsonObject o;
+    QJsonDocument d;
+
+    o["ServerResponse"] = CLIENTLEFT;
+    o["Username"] = user->_username;
+
+
+    d.setObject(o);
+    *_byteBuffer = d.toJson();
+
+    qDebug() << user->_username << " has left the lobby...";
+    emit issueGlobalUpdate();
+
+    for (int i = 0; i < _clientList->size(); i++)
+    {
+        if (_clientList->at(i)->_socketID == clientSock)
+            _clientList->removeAt(i);
+    }
+    //we previously grabbed pointer, removed from list
+    delete user;//can now delete
+    user = nullptr;
 }
 
 void TTTServer::inviteUser(int clientSock, QJsonObject & obj)
@@ -316,7 +389,6 @@ ClientObject * TTTServer::findClientBySocket(int clientSock)
 {
     ClientObject * found = nullptr;
 
-    //check for this as a problem spot, can we return a pointer gather from ranged for loop?
     for (ClientObject * obj : *_clientList)
     {
         if (obj->_socketID == clientSock)

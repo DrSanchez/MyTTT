@@ -17,6 +17,7 @@ class TTTUser : public QObject
 
 public:
     explicit TTTUser(QObject *parent = 0);
+    ~TTTUser();
 
     //getters for QML property interface
     int gameId();

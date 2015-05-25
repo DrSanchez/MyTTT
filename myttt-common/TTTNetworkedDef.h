@@ -29,7 +29,8 @@ enum ServerResponse
 {
     ACCEPTEDCLIENT,
     USERLIST,
-    CLIENTLEFT
+    CLIENTLEFT,
+    CHALLENGEACCEPTED
 };
 
 /* commands used when client is ENGAGED */

@@ -21,6 +21,24 @@ Rectangle
             userListModel.append({"username":name, "engagedFlag":engaged})
         }
 
+        onRemoveUser:
+        {
+            var index = 0;
+            var found = false;
+
+            for (index; index < userListModel.count && found == false; index++)
+            {
+                var user = userListModel.get(index);
+                if (user.username == name)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if (found == true)
+                userListModel.remove(index);
+        }
+
         onResetUserList:
         {
             userListModel.clear();
@@ -141,6 +159,7 @@ Rectangle
                 onClicked:
                 {
                    // Client.resetUser
+                    Client.leaveLobby();
                     mainContainer.nextAppState = "STARTING";
                 }
             }

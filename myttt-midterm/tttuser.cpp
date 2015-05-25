@@ -5,6 +5,14 @@ TTTUser::TTTUser(QObject *parent)
 {
 }
 
+TTTUser::~TTTUser()
+{
+    _gameID = 0;
+    _username = "";
+    _state = DISCONNECTING;
+    _piece = "";
+}
+
 int TTTUser::gameId()
 {
     return _gameID;

@@ -5,7 +5,6 @@
 #include <QThread>
 #include <QThreadPool>
 
-static int message_count = 0;
 TTTClient::TTTClient(TTTUser * user, QObject *parent)
     : QObject(parent), _localTurn(false), _running(false), _localUser(user),
       _byteBuffer(nullptr), _gameView(nullptr), _onlineUsers(nullptr)
@@ -48,11 +47,8 @@ bool TTTClient::waitForRequest()
         {
             receivedSomething = true;
             readBytes = recv(_clientDescriptor, buffer, BUFFER_MAX, 0);
-            message_count++;
-            qDebug() << "Message Count: " << message_count;
             if (readBytes < 0)
             {//error
-                qDebug() << "Error on recv...";
                 perror("Recv error...");
                 actualError = true;
             }
@@ -128,11 +124,8 @@ void TTTClient::run()
         if (FD_ISSET(_clientDescriptor, &reader))
         {
             readBytes = recv(_clientDescriptor, buffer, BUFFER_MAX, 0);
-            message_count++;
-            qDebug() << "Message Count: " << message_count;
             if (readBytes < 0)
             {//error
-                qDebug() << "Error on recv...";
                 perror("Recv error...");
             }
             else if (readBytes == 0)
@@ -173,7 +166,23 @@ void TTTClient::run()
 
 void TTTClient::cleanup()
 {
+    _running = false;
+    QThreadPool::globalInstance()->waitForDone(3000);
+    //client reader thread should close quickly
 
+    shutdown(_clientDescriptor, 2);//shut it all down
+    close(_clientDescriptor);
+
+    _byteBuffer->clear();
+    delete _byteBuffer;
+    _byteBuffer = nullptr;
+    _onlineUsers->clear();
+    delete _onlineUsers;
+    _onlineUsers = nullptr;
+    delete _gameView;
+    _gameView = nullptr;
+    delete _localUser;
+    _localUser = nullptr;
 }
 
 bool TTTClient::localTurn()
@@ -259,6 +268,21 @@ bool TTTClient::challengeUser(QString challengedUser)
         result = true;
 
     return result;
+}
+
+void TTTClient::leaveLobby()
+{
+    QJsonObject o;
+    QJsonDocument d;
+    QByteArray bytes;
+
+    o["CommHeader"] = LEAVE;
+
+    d.setObject(o);
+    bytes = d.toJson();
+
+    if (!sendAll(bytes))
+        qDebug() << "Error sending bytes...";
 }
 
 bool TTTClient::setupClient()
@@ -402,6 +426,11 @@ void TTTClient::processServerResponse()
         }
         case CLIENTLEFT:
         {
+            handleClientLeft(o);
+            break;
+        }
+        case CHALLENGEACCEPTED:
+        {
             break;
         }
         default:
@@ -442,7 +471,20 @@ void TTTClient::handleUserList(QJsonObject & obj)
 
 void TTTClient::handleClientLeft(QJsonObject & obj)
 {
+    QString leftClient = obj["Username"].toString();
 
+    if (leftClient == _localUser->username())
+    {//the server has told us it is ok to cleanup
+        cleanup();
+    }
+    else //we were told someone left
+    {
+        //remove from memory
+        _onlineUsers->removeOne(leftClient);
+
+        //remove from qml view
+        emit removeUser(leftClient);
+    }
 }
 
 void TTTClient::handleAcceptedClient(QJsonObject & obj)
