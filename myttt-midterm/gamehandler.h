@@ -8,7 +8,7 @@ enum GameState
 {
     DRAW,
     WIN_X,
-    WIN_Y,
+    WIN_O,
     PLAYING
 };
 
@@ -28,7 +28,7 @@ public:
     bool validateMove(int row, int col, QString symbol);
 
     GameState getState();
-
+    bool makeReceiverMove(int row, int col, QString symbol);
     void setPlayerX(QString name);
     void setPlayerO(QString name);
     void setGameState(GameState state);

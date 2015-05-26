@@ -14,6 +14,11 @@ GameManager::GameManager(int gameID, QObject *parent)
 
 }
 
+int GameManager::getOpponentSocket(int socket)
+{
+    return (socket == _playerXID ? _playerOID : _playerXID);
+}
+
 void GameManager::setXID(int socket)
 {
     _playerXID = socket;
@@ -36,14 +41,19 @@ bool GameManager::anyOpen()
     return anyOpen;
 }
 
+GameState GameManager::getState()
+{
+    return _state;
+}
+
 bool GameManager::gameOverState()
 {
-    return (_state == WIN_X || _state == WIN_Y || _state == DRAW);
+    return (_state == WIN_X || _state == WIN_O || _state == DRAW);
 }
 
 bool GameManager::checkWinDrawCondition(int player)
 {
-    if (player != _playerXID || player != _playerOID)
+    if (player != _playerXID && player != _playerOID)
     {//error wrong game, this probably will not happen
         qDebug() << "Error, asked the wrong game about player: " << player;
         emit wrongGameError(player, _gameID);
@@ -54,19 +64,19 @@ bool GameManager::checkWinDrawCondition(int player)
     if((_board[1][1] != OPEN) &&
        ((_board[0][0] == _board[1][1] && _board[0][0] == _board[2][2]) ||
        (_board[0][2] == _board[1][1] && _board[0][2] == _board[2][0])))
-        _state = (player == _playerXID ? WIN_X : WIN_Y);
+        _state = (player == _playerXID ? WIN_X : WIN_O);
 
     //check row/col
     for (int i = 0; i < 3 && !gameOverState(); i++)
         if((_board[i][i] != OPEN) &&
            ((_board[i][0] == _board[i][1] && _board[i][0] == _board[i][2])||
            (_board[0][i] == _board[1][i] && _board[0][i] == _board[2][i])))
-            _state = (player == _playerXID ? WIN_X : WIN_Y);
+            _state = (player == _playerXID ? WIN_X : WIN_O);
 
     if (!anyOpen())
         _state = DRAW;
 
-    return (_state == WIN_X || _state == WIN_Y || _state == DRAW);
+    return (_state == WIN_X || _state == WIN_O || _state == DRAW);
 }
 
 bool GameManager::makeMove(int player, int row, int col)

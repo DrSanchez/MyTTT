@@ -24,6 +24,21 @@ bool GameHandler::validateMove(int row, int col, QString symbol)
     return result;
 }
 
+bool GameHandler::makeReceiverMove(int row, int col, QString symbol)
+{
+    bool result = false;
+
+    if (_boardView[row][col] == OPEN)
+    {
+        result = true;
+        _boardView[row][col] = (symbol.contains("X") ? USED_X : USED_O);
+    }
+    else
+        result = false;
+
+    return result;
+}
+
 GameState GameHandler::getState()
 {
     return _lastState;

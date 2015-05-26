@@ -36,13 +36,14 @@ enum ServerResponse
     CHALLENGEACCEPTED,
     CHALLENGEDECLINED,
     RECEIVEMOVE,
-    UPDATEENGAGED
+    UPDATEENGAGED,
+    GAMEOVER
 };
 
 enum ChallengeDeclineReason
 {
     USERDECLINE,
-    ERROR
+    NETERROR
 };
 
 /* enumeration for piece */

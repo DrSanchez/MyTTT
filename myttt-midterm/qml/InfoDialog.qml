@@ -19,7 +19,6 @@ Rectangle
 
     function showBox(level, title, message)
     {
-        //if ()
         transparencyContainer.alertLevel = level;
         if (level == 1)
             alertLevelIconContainer.source = "../images/information_icon.png";
@@ -42,6 +41,8 @@ Rectangle
         transparencyContainer.alertTitle = title;
         transparencyContainer.alertMessage = message;
         yesButton.visible = true;//need to show/activate yes button
+        okButton.pText = "No";
+        transparencyContainer.visible = true;
         applicationShadingAnimationIn.start();
     }
 

@@ -30,7 +30,6 @@ public:
     void setPiece(QString piece);//"X" or "O"
 
 signals:
-    void gameIdChanged();
     void usernameChanged();
     void stateChanged();
     void pieceChanged();

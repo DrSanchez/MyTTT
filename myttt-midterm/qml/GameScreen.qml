@@ -37,6 +37,7 @@ Rectangle
 
             Repeater
             {
+                id: tileModel
                 model: 9
 
                 Tile
@@ -53,6 +54,7 @@ Rectangle
                             if (Client.validateMove(row, col))
                             {
                                 state = LocalUser.piece;
+                                console.log("Piece: ", LocalUser.piece);
                             }
                         }
                     }
@@ -60,6 +62,26 @@ Rectangle
             }
         }
     }//end of board element
+
+    Connections
+    {
+        target: Client
+
+        onUpdateUIBoard:
+        {
+            var index = ((col * 3) + row);
+            var tile = tileModel.itemAt(index);
+            tile.state = piece;
+            console.log("Piece: ", piece);
+        }
+
+        onGameoverNotification:
+        {
+            console.log("Gameover in qml...");
+            infoDialog.showBox(2, title, message);
+            mainContainer.prevAppState = "LOBBY";
+        }
+    }
 
     Text
     {

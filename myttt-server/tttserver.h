@@ -48,13 +48,13 @@ protected:
 
 private:
     //private data members
-    int                           _uniquifier;
-    char                          _basicBuffer[BUFFER_MAX];
-    bool                          _running;
-    QByteArray               *    _byteBuffer;
-    QList<ClientObject *>    *    _clientList;
+    int                             _uniquifier;
+    char                            _basicBuffer[BUFFER_MAX];
+    bool                            _running;
+    QByteArray                 *    _byteBuffer;
+    QList<ClientObject *>      *    _clientList;
     QMap<int, GameManager *>   *    _gameMap;
-    GlobalUpdateThread       *    _global;
+    GlobalUpdateThread         *    _global;
 
     //unix sockets members
     int                  _fdMax;

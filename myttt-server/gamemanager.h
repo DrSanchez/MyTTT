@@ -7,7 +7,7 @@ enum GameState
 {
     DRAW,
     WIN_X,
-    WIN_Y,
+    WIN_O,
     PLAYING
 };
 
@@ -26,6 +26,9 @@ public:
 
     void setXID(int socket);
     void setOID(int socket);
+
+    int getOpponentSocket(int socket);
+    GameState getState();
 
     //game logic prototypes
     bool anyOpen();

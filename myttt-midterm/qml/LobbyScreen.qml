@@ -94,6 +94,7 @@ Rectangle
         //only challenger will receive this signal
         onChallengeAccepted://challengee knows they accepted
         {
+            infoDialog.hideBox();//call this in case you didn't acknowledge, but game is starting
             //challenger is always "X"
             LocalUser.piece = "X";
             Client.localTurn = true;
@@ -102,7 +103,10 @@ Rectangle
 
         onChallengeDeclined:
         {
-            mainContainer.nextAppState = "LOBBY";
+            infoDialog.showBox(1, title, message);
+
+            //trick the message box to not switch screens in the background
+            mainContainer.prevAppState = "LOBBY";//until user has acknowledged
         }
 
         onChallenged:
@@ -160,15 +164,18 @@ Rectangle
         //challengee will never call this
         function sendChallenge(userToChallenge)
         {
-            if (Client.challengeUser(userToChallenge))
-            {//pop wait on invite message
-                infoDialog.showBox(1, "Challenge Wait", "Waiting for response from " +
-                                   userToChallenge);
-                //the challenger will be notified by a client signal from server
+            if (LocalUser.username != userToChallenge)
+            {//cant challenge yourself.. >.<
+                if (Client.challengeUser(userToChallenge))
+                {//pop wait on invite message
+                    infoDialog.showBox(1, "Challenge Wait", "Waiting for response from " +
+                                       userToChallenge);
+                    //the challenger will be notified by a client signal from server
 
-                //we can safely set this, because if declined, no one sees this
-                gameScreen.opponent = userToChallenge;//and it will be set again if challenged
-                //also this is useful for having the data around
+                    //we can safely set this, because if declined, no one sees this
+                    gameScreen.opponent = userToChallenge;//and it will be set again if challenged
+                    //also this is useful for having the data around
+                }
             }
         }
 

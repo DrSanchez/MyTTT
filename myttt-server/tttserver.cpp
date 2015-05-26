@@ -184,7 +184,6 @@ void TTTServer::run()
             if (FD_ISSET(looper->_socketID, &readers))
             {//client sent a message
                 readBytes = recv(looper->_socketID, buffer, BUFFER_MAX, 0);
-                qDebug() << "Another Received: " << buffer << readBytes;
                 if (readBytes <= 0)
                 {
                     if (readBytes == 0)
@@ -325,7 +324,58 @@ void TTTServer::updateEngagedUsers(QString challenger, QString challengee, bool 
 
 void TTTServer::makeMove(int clientSock, QJsonObject & obj)
 {
+    ClientObject * co = findClientBySocket(clientSock);
 
+    qDebug() << "Making move on server...";
+
+    //gotta for the map to use the right indirection
+    GameManager * gm = _gameMap->operator [](co->_gameID);
+
+    int row = obj["Row"].toInt();
+    int col = obj["Col"].toInt();
+    if (gm->makeMove(clientSock, row, col))
+    {
+        QJsonObject o;
+        QJsonDocument d;
+        int opponentSocket = gm->getOpponentSocket(clientSock);
+
+        qDebug() << "We made the move...";
+        o["ServerResponse"] = RECEIVEMOVE;
+        o["Username"] = co->_username;
+        o["Row"] = row;
+        o["Col"] = col;
+
+        d.setObject(o);
+        *_byteBuffer = d.toJson();
+        qDebug() << "Client socket: " << clientSock << "\nOpponentSocket: " << opponentSocket;
+        if (!sendAll(opponentSocket))
+            qDebug() << "Error sending receive move to opponent...";
+
+
+        if (gm->checkWinDrawCondition(clientSock))
+        {
+            o.remove("ServerResponse");
+            o.remove("Username");
+            o.remove("Row");
+            o.remove("Col");
+
+            o["ServerResponse"] = GAMEOVER;
+            if (gm->getState() == PLAYING)
+                qDebug() << "Error, gameover didn't set right...";
+            o["Reason"] = gm->getState();//should not ever be PLAYING
+
+            //need to send to both clients
+            d.setObject(o);
+            *_byteBuffer = d.toJson();
+            if (!sendAll(opponentSocket))
+                qDebug() << "Error sending gameover to opponent...";
+            *_byteBuffer = d.toJson();
+            if (!sendAll(clientSock))
+                qDebug() << "Error sending gameover to other opponent...";
+
+            updateEngagedUsers(co->_username, findClientBySocket(opponentSocket)->_username, false);
+        }
+    }
 }
 
 void TTTServer::declineInvite(int clientSock, QJsonObject & obj)
@@ -335,7 +385,7 @@ void TTTServer::declineInvite(int clientSock, QJsonObject & obj)
     QJsonDocument d;
 
     o["ServerReponse"] = CHALLENGEDECLINED;
-    o["ChallengeDeclineReason"] = USERDECLINE;//let them know it was an error
+    o["ChallengeDeclineReason"] = USERDECLINE;
     d.setObject(o);
     *_byteBuffer = d.toJson();
 
@@ -460,7 +510,7 @@ void TTTServer::inviteUser(int clientSock, QJsonObject & obj)
         o.remove("ServerResponse");//clear challenged command
         o.remove("Challenger");//clear challenger item
         o["ServerReponse"] = CHALLENGEDECLINED;
-        o["ChallengeDeclineReason"] = ERROR;//let them know it was an error
+        o["ChallengeDeclineReason"] = NETERROR;//let them know it was an error
         d.setObject(o);
         *_byteBuffer = d.toJson();
         if (!sendAll(clientSock))//notifying challenger
@@ -478,6 +528,8 @@ void TTTServer::startGame(int clientSock, QJsonObject & obj)
 
     GameManager * gm = new GameManager(gameIDHandler, this);
 
+    qDebug() << "Accepted invite, creating new game: " << gameIDHandler;
+
     _gameMap->insert(gameIDHandler, gm);
 
     //player "X" is the challenger
@@ -487,11 +539,20 @@ void TTTServer::startGame(int clientSock, QJsonObject & obj)
     //player "O" is the invite accepter
     gm->setOID(clientSock);
 
+    //assign the players their game id, so we can find it later
     ClientObject * temp = findClientBySocket(receiverSock);
     temp->_gameID = gameIDHandler;
 
+    temp = findClientBySocket(clientSock);
+    temp->_gameID = gameIDHandler;
+    //end game id assignment
+
+    qDebug() << "Before update all regarding engaged users in new game...";
+
     //this game started, let everyone know
     updateEngagedUsers(receiver, findClientBySocket(clientSock)->_username, true);
+
+    qDebug() << "We told everyone these two are in a game now...";
 
     QJsonObject o;
     QJsonDocument d;

@@ -26,17 +26,11 @@
 
 #define BUFFER_MAX          1024
 
-enum CleanupReason
-{
-    EOF_FROM_SERVER,
-    CLIENT_QUIT
-};
-
 class TTTClient : public QObject, public QRunnable
 {
     Q_OBJECT
 
-    Q_PROPERTY(bool localTurn READ localTurn NOTIFY localTurnChanged)
+    Q_PROPERTY(bool localTurn READ localTurn WRITE setLocalTurn NOTIFY localTurnChanged)
 
 public:
     explicit TTTClient(TTTUser * user, QObject *parent = 0);
@@ -48,6 +42,9 @@ public:
     Q_INVOKABLE void leaveLobby();
     Q_INVOKABLE bool acceptChallenge(QString name);
     Q_INVOKABLE bool declineChallenge(QString name);
+
+    //property setters
+    void setLocalTurn(bool turn);
 
     //property getters
     bool localTurn();
@@ -62,7 +59,7 @@ signals:
 
     //Challenge Accepted! Self-Five!
     void challengeAccepted();
-    void challengeDeclined();
+    void challengeDeclined(QString title, QString message);
     void challenged(QString challenger);
 
     //property signals
@@ -72,6 +69,8 @@ signals:
     void removeUser(QString name);
     void newUser(QString name, bool engaged);
     void updateUserEngaged(QString name, bool engaged);
+    void updateUIBoard(int row, int col, QString piece);
+    void gameoverNotification(QString title, QString message);
 
 public slots:
     //client responses
@@ -96,13 +95,13 @@ private:
     bool setupClient();
     bool waitForRequest();
     bool requestUserList();
-    void setLocalTurn(bool turn);
     void processServerResponse();
     bool sendAll(QByteArray &bytes);
     void clearBuffer(char * buffer);
     bool tryConnect(int domain, int type, int protocol, sockaddr *address);
 
     //server response methods
+    void handleGameover(QJsonObject & obj);
     void handleUserList(QJsonObject & obj);
     void handleChallenge(QJsonObject & obj);
     void handleClientLeft(QJsonObject & obj);

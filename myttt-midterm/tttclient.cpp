@@ -294,7 +294,24 @@ bool TTTClient::validateMove(int row, int col)
     result = _gameView->validateMove(row, col, _localUser->piece());
 
     if (result)
+    {
         setLocalTurn(false);
+        QJsonObject o;
+        QJsonDocument d;
+        QByteArray b;
+
+        o["CommHeader"] = MAKEMOVE;
+        o["Row"] = row;
+        o["Col"] = col;
+
+        d.setObject(o);
+        b = d.toJson();
+        if (!sendAll(b))
+        {
+            qDebug() << "Error sending move to server...";
+            result = false;
+        }
+    }
 
     return result;
 }
@@ -371,10 +388,6 @@ bool TTTClient::tryConnect(int domain, int type, int protocol, struct sockaddr *
     int milliseconds = 40;
     bool connected = false;
 
-    qDebug() << "Domain: " << domain;
-    qDebug() << "Type: " << type;
-    qDebug() << "Protocol: " << protocol;
-
     for (int numberTimeouts = (2500 / milliseconds); numberTimeouts > 0 && !connected; numberTimeouts--)
     {
         if ((_clientDescriptor = socket(domain, type, protocol)) >= 0)
@@ -444,7 +457,6 @@ bool TTTClient::sendAll(QByteArray & bytes)
     int bytesReturned = 0;
     int messageFullLength = bytes.length();
 
-    qDebug() << "Send all: " << bytes << "\nFrom: " << _clientDescriptor;
     do
     {
         bytesReturned = send(_clientDescriptor, bytes.data(), bytes.length(), 0);
@@ -470,7 +482,6 @@ void TTTClient::processServerResponse()
     QJsonObject o = d.object();
 
     ServerResponse response = (ServerResponse) o["ServerResponse"].toInt();
-    qDebug() << "Processing server response..." << *_byteBuffer;
     switch(response)
     {
         case ACCEPTEDCLIENT:
@@ -508,10 +519,56 @@ void TTTClient::processServerResponse()
             handleUpdateEngaged(o);
             break;
         }
+        case RECEIVEMOVE:
+        {
+            handleReceiveMove(o);
+            break;
+        }
+        case GAMEOVER:
+        {
+            handleGameover(o);
+            break;
+        }
         default:
         {
             break;
         }
+    }
+}
+
+void TTTClient::handleGameover(QJsonObject & obj)
+{
+    GameState g = (GameState) obj["Reason"].toInt();
+
+    if (g == WIN_X)
+    {
+        if (_localUser->piece() == "X")
+        {//winner
+            emit gameoverNotification("Gameover!", "You have won! Congratulations!");
+        }
+        else if (_localUser->piece() == "O")
+        {//loser
+            emit gameoverNotification("Gameover!", "You have lost! Learn to Tic-Tac-Toe!");
+        }
+    }
+    else if (g == WIN_O)
+    {
+        if (_localUser->piece() == "X")
+        {//loser
+            emit gameoverNotification("Gameover!", "You have lost! Learn to Tic-Tac-Toe!");
+        }
+        else if (_localUser->piece() == "O")
+        {//winner
+            emit gameoverNotification("Gameover!", "You have won! Congratulations!");
+        }
+    }
+    else if (g == DRAW)
+    {//everyone loses
+        emit gameoverNotification("Gameover!", "The game has ended in a draw!");
+    }
+    else
+    {
+        //should not get here
     }
 }
 
@@ -564,7 +621,18 @@ void TTTClient::handleClientLeft(QJsonObject & obj)
 
 void TTTClient::handleReceiveMove(QJsonObject & obj)
 {
+    QString moveSender = obj["Username"].toString();
+    int row = obj["Row"].toInt();
+    int col = obj["Col"].toInt();
 
+    qDebug() << "Handling receiving move...";
+
+    if (_gameView->makeReceiverMove(row, col, _gameView->getSymbolByPlayerName(moveSender)))
+    {
+        qDebug() << "Notifying qml...";
+        setLocalTurn(true);
+        emit updateUIBoard(row, col, _gameView->getSymbolByPlayerName(moveSender));
+    }
 }
 
 void TTTClient::handleUpdateEngaged(QJsonObject & obj)
@@ -592,7 +660,6 @@ void TTTClient::handleUpdateEngaged(QJsonObject & obj)
 
 void TTTClient::handleAcceptedClient(QJsonObject & obj)
 {
-    qDebug() << "Do we get to handle accept client?";
     QString clientName = obj["Username"].toString();
 
     //we are the accepted client, but our name was not unique, update it with server change
@@ -600,7 +667,6 @@ void TTTClient::handleAcceptedClient(QJsonObject & obj)
         _localUser->setUsername(clientName);
     else if (clientName != _localUser->username())//we want to add this client to our lists
     {
-        qDebug() << "Adding user: " << clientName;
         _onlineUsers->append(clientName);
         emit newUser(clientName, false);
     }
@@ -610,6 +676,10 @@ void TTTClient::handleAcceptedClient(QJsonObject & obj)
 void TTTClient::handleChallenge(QJsonObject & obj)
 {
     QString challenger = obj["Challenger"].toString();
+
+    _gameView->setPlayerX(challenger);
+    _gameView->setPlayerO(_localUser->username());
+
     emit challenged(challenger);
 }
 
@@ -622,7 +692,14 @@ void TTTClient::handleChallengeDeclined(QJsonObject & obj)
 {
     ChallengeDeclineReason reason = (ChallengeDeclineReason) obj["Reason"].toInt();
 
-    emit challengeDeclined();
+    if (reason == NETERROR)
+    {
+        emit challengeDeclined("Network Error", "Networked forced decline on error communication with opponent.");
+    }
+    else if (reason == USERDECLINE)
+    {
+        emit challengeDeclined("User Decline", "The user elected not to face you at a game of Tic Tac Toe, perhaps you are far too menacing...");
+    }
 }
 
 void TTTClient::clearBuffer(char * buffer)
