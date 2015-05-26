@@ -199,6 +199,25 @@ void TTTClient::setLocalTurn(bool turn)
     }
 }
 
+void TTTClient::forfeit()
+{
+    QJsonObject o;
+    QJsonDocument d;
+    QByteArray b;
+
+    o["CommHeader"] = FORFEIT;
+
+    d.setObject(o);
+    b = d.toJson();
+
+    if (!sendAll(b))
+        qDebug() << "Error sending forfeit bytes to server...";
+
+    //can call anyway because ui will still change menus
+    _gameView->resetBoard();
+    emit clearUIBoard();
+}
+
 bool TTTClient::acceptChallenge(QString name)
 {
     bool result = false;
@@ -255,7 +274,7 @@ bool TTTClient::validateServerIp(QString ip, QString username)
     if (setupClient())
     {
         //call up user list from server
-        qDebug() << "Client should be connected...";
+        qDebug() << username << " should be connected...";
         if (sendUser())
         {
             if(!waitForRequest())
@@ -529,6 +548,11 @@ void TTTClient::processServerResponse()
             handleGameover(o);
             break;
         }
+        case PLAYERFORFEIT:
+        {
+            handleForfeit(o);
+            break;
+        }
         default:
         {
             break;
@@ -536,10 +560,20 @@ void TTTClient::processServerResponse()
     }
 }
 
+void TTTClient::handleForfeit(QJsonObject & obj)
+{
+    qDebug() << "Handling a forfeit";
+    //we were notified of a forfeit
+    emit gameoverNotification("Gameover!", "You have won by forfeit! This is a dishonorable victory!");
+    _gameView->resetBoard();
+    emit clearUIBoard();
+}
+
 void TTTClient::handleGameover(QJsonObject & obj)
 {
     GameState g = (GameState) obj["Reason"].toInt();
 
+    qDebug() << "Handling a gameover";
     if (g == WIN_X)
     {
         if (_localUser->piece() == "X")
@@ -569,7 +603,10 @@ void TTTClient::handleGameover(QJsonObject & obj)
     else
     {
         //should not get here
+        qDebug() << "Should not see this";
     }
+    _gameView->resetBoard();
+    emit clearUIBoard();
 }
 
 void TTTClient::handleUserList(QJsonObject & obj)
@@ -593,6 +630,8 @@ void TTTClient::handleUserList(QJsonObject & obj)
         //reset UI and stored list, updating from full server list
         emit resetUserList();
         _onlineUsers->clear();
+        if (_onlineUsers->size() > 0)//we were interrupted somehow
+            _onlineUsers->clear();//try again
         for (int i = 0; i < userList.length(); i++)
         {
             _onlineUsers->append(userList.at(i));
@@ -625,11 +664,8 @@ void TTTClient::handleReceiveMove(QJsonObject & obj)
     int row = obj["Row"].toInt();
     int col = obj["Col"].toInt();
 
-    qDebug() << "Handling receiving move...";
-
     if (_gameView->makeReceiverMove(row, col, _gameView->getSymbolByPlayerName(moveSender)))
     {
-        qDebug() << "Notifying qml...";
         setLocalTurn(true);
         emit updateUIBoard(row, col, _gameView->getSymbolByPlayerName(moveSender));
     }
@@ -685,6 +721,10 @@ void TTTClient::handleChallenge(QJsonObject & obj)
 
 void TTTClient::handleChallengeAccepted(QJsonObject & obj)
 {
+    //ensure the board is clear, it should be - better safe than sorry
+    _gameView->resetBoard();
+    emit clearUIBoard();
+
     emit challengeAccepted();
 }
 

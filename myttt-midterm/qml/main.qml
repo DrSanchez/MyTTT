@@ -19,21 +19,21 @@ Rectangle
         }
         else if (nextAppState == "STARTING")
         {
+            startScreen.visible = true;
             gameScreen.visible = false;
             lobbyScreen.visible = false;
-            startScreen.visible = true;
         }
         else if (nextAppState == "LOBBY")
         {
+            lobbyScreen.visible = true;
             startScreen.visible = false;
             gameScreen.visible = false;
-            lobbyScreen.visible = true;
         }
         else if (nextAppState == "GAME")
         {
+            gameScreen.visible = true;
             startScreen.visible = false;
             lobbyScreen.visible = false;
-            gameScreen.visible = true;
         }
     }
 
@@ -51,11 +51,6 @@ Rectangle
         onAddressInfoFailure: infoDialog.showBox(3, "Address Identification Failure",
           "Could not resolve the address info for the given Ip address. Please check" +
           " that the provided address is correct and try again.");
-
-        onServerConnected:
-        {
-
-        }
     }
 
     Component.onCompleted:

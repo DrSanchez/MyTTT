@@ -106,7 +106,7 @@ Rectangle
             infoDialog.showBox(1, title, message);
 
             //trick the message box to not switch screens in the background
-            mainContainer.prevAppState = "LOBBY";//until user has acknowledged
+            mainContainer.nextAppState = "LOBBY";//until user has acknowledged
         }
 
         onChallenged:

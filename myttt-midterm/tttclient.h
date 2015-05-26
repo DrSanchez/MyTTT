@@ -36,12 +36,13 @@ public:
     explicit TTTClient(TTTUser * user, QObject *parent = 0);
 
     //qml exposed methods
-    Q_INVOKABLE bool validateMove(int row, int col);
-    Q_INVOKABLE bool validateServerIp(QString ip, QString username);
-    Q_INVOKABLE bool challengeUser(QString challengedUser);
+    Q_INVOKABLE void forfeit();
     Q_INVOKABLE void leaveLobby();
     Q_INVOKABLE bool acceptChallenge(QString name);
     Q_INVOKABLE bool declineChallenge(QString name);
+    Q_INVOKABLE bool validateMove(int row, int col);
+    Q_INVOKABLE bool challengeUser(QString challengedUser);
+    Q_INVOKABLE bool validateServerIp(QString ip, QString username);
 
     //property setters
     void setLocalTurn(bool turn);
@@ -51,9 +52,9 @@ public:
 
 signals:
     //qml interface signals
+    void clearUIBoard();//let ui know we cleaned up the model
     void resetUserList();
     void invalidUsername();
-    void serverConnected();
     void addressInfoFailure();
     void serverFailedToConnect();
 
@@ -101,6 +102,7 @@ private:
     bool tryConnect(int domain, int type, int protocol, sockaddr *address);
 
     //server response methods
+    void handleForfeit(QJsonObject & obj);
     void handleGameover(QJsonObject & obj);
     void handleUserList(QJsonObject & obj);
     void handleChallenge(QJsonObject & obj);

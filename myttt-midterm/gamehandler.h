@@ -25,15 +25,15 @@ class GameHandler : public QObject
 public:
     explicit GameHandler(QObject *parent = 0);
 
-    bool validateMove(int row, int col, QString symbol);
-
+    //public interface methods
+    void resetBoard();
     GameState getState();
-    bool makeReceiverMove(int row, int col, QString symbol);
     void setPlayerX(QString name);
     void setPlayerO(QString name);
     void setGameState(GameState state);
-
     QString getSymbolByPlayerName(QString name);
+    bool validateMove(int row, int col, QString symbol);
+    bool makeReceiverMove(int row, int col, QString symbol);
 
 signals:
     //client will add the

@@ -75,11 +75,21 @@ Rectangle
             console.log("Piece: ", piece);
         }
 
+        onClearUIBoard:
+        {
+            console.log("Clearing UI Board...");
+            for (var i = 0; i < 9; i++)
+            {
+                var tile = tileModel.itemAt(i)
+                tile.state = "";
+            }
+        }
+
         onGameoverNotification:
         {
             console.log("Gameover in qml...");
             infoDialog.showBox(2, title, message);
-            mainContainer.prevAppState = "LOBBY";
+            mainContainer.nextAppState = "LOBBY";
         }
     }
 
@@ -145,7 +155,7 @@ Rectangle
                 anchors.fill: parent
                 onClicked:
                 {
-                    //notify server of forfeit
+                    Client.forfeit();
                     mainContainer.nextAppState = "LOBBY";
                 }
             }

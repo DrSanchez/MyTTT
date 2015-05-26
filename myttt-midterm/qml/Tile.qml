@@ -29,6 +29,16 @@ Item
     states: [
         State
         {
+            name: ""
+            PropertyChanges
+            {
+                target: tileImage
+                source: ""
+                width: tileContainer.width
+            }
+        },
+        State
+        {
             name: "X"
             PropertyChanges
             {

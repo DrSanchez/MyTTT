@@ -77,6 +77,7 @@ private:
     void makeMove(int clientSock, QJsonObject & obj);
     void startGame(int clientSock, QJsonObject & obj);
     void inviteUser(int clientSock, QJsonObject & obj);
+    void alertForfeit(int clientSock, QJsonObject & obj);
     void declineInvite(int clientSock, QJsonObject & obj);
 
     int findSocketByName(QString name);

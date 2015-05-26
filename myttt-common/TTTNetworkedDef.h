@@ -23,7 +23,8 @@ enum CommHeader
     INVITE,
     ACCEPTINVITE,
     DECLINEINVITE,
-    MAKEMOVE
+    MAKEMOVE,
+    FORFEIT
 };
 
 /* first byte of any server response to client */
@@ -37,7 +38,8 @@ enum ServerResponse
     CHALLENGEDECLINED,
     RECEIVEMOVE,
     UPDATEENGAGED,
-    GAMEOVER
+    GAMEOVER,
+    PLAYERFORFEIT
 };
 
 enum ChallengeDeclineReason

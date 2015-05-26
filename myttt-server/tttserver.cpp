@@ -278,12 +278,42 @@ void TTTServer::processMessage(ClientObject * client)
             makeMove(client->_socketID, obj);
             break;
         }
+        case FORFEIT:
+        {
+            alertForfeit(client->_socketID, obj);
+            break;
+        }
         default:
         {
             qDebug() << "Unrecognized command header...";
             break;
         }
     }
+}
+
+void TTTServer::alertForfeit(int clientSock, QJsonObject & obj)
+{//client socket is caller
+    QJsonObject o;
+    QJsonDocument d;
+    ClientObject * co = findClientBySocket(clientSock);
+    GameManager * gm = _gameMap->operator [](co->_gameID);
+    int opponent = gm->getOpponentSocket(co->_socketID);
+
+    o["ServerResponse"] = PLAYERFORFEIT;
+
+    d.setObject(o);
+    *_byteBuffer = d.toJson();
+    if (!sendAll(opponent))
+        qDebug() << "Error sending forfeit to opponent: " << opponent;
+
+    updateEngagedUsers(co->_username, findClientBySocket(opponent)->_username, false);
+
+    //this gm is finished, kill it
+    if (_gameMap->remove(co->_gameID) != 1)//pull the pointer out of the map
+        qDebug() << "Somethin' weird happened here...";
+    delete gm;
+    gm = nullptr;
+    //clean up this gm
 }
 
 void TTTServer::issueGlobalUpdate()
@@ -326,8 +356,6 @@ void TTTServer::makeMove(int clientSock, QJsonObject & obj)
 {
     ClientObject * co = findClientBySocket(clientSock);
 
-    qDebug() << "Making move on server...";
-
     //gotta for the map to use the right indirection
     GameManager * gm = _gameMap->operator [](co->_gameID);
 
@@ -339,7 +367,6 @@ void TTTServer::makeMove(int clientSock, QJsonObject & obj)
         QJsonDocument d;
         int opponentSocket = gm->getOpponentSocket(clientSock);
 
-        qDebug() << "We made the move...";
         o["ServerResponse"] = RECEIVEMOVE;
         o["Username"] = co->_username;
         o["Row"] = row;
@@ -359,6 +386,8 @@ void TTTServer::makeMove(int clientSock, QJsonObject & obj)
             o.remove("Row");
             o.remove("Col");
 
+            qDebug() << "Found a gameover condition...";
+
             o["ServerResponse"] = GAMEOVER;
             if (gm->getState() == PLAYING)
                 qDebug() << "Error, gameover didn't set right...";
@@ -374,6 +403,14 @@ void TTTServer::makeMove(int clientSock, QJsonObject & obj)
                 qDebug() << "Error sending gameover to other opponent...";
 
             updateEngagedUsers(co->_username, findClientBySocket(opponentSocket)->_username, false);
+
+            //this gm is finished, kill it
+            if (_gameMap->remove(co->_gameID) != 1)//pull the pointer out of the map
+                qDebug() << "Somethin' weird happened here...";
+            delete gm;
+            gm = nullptr;
+            //clean up this gm
+
         }
     }
 }
@@ -388,6 +425,9 @@ void TTTServer::declineInvite(int clientSock, QJsonObject & obj)
     o["ChallengeDeclineReason"] = USERDECLINE;
     d.setObject(o);
     *_byteBuffer = d.toJson();
+
+    //we engage users by default on invite, must disengage if declining
+    updateEngagedUsers(receiver, findClientBySocket(clientSock)->_username, false);
 
     if (!sendAll(findSocketByName(receiver)))
         qDebug() << "Error sending to client: " << receiver;
