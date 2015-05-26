@@ -7,15 +7,9 @@ TTTUser::TTTUser(QObject *parent)
 
 TTTUser::~TTTUser()
 {
-    _gameID = 0;
     _username = "";
     _state = DISCONNECTING;
     _piece = "";
-}
-
-int TTTUser::gameId()
-{
-    return _gameID;
 }
 
 QString TTTUser::username()
@@ -31,15 +25,6 @@ ClientState TTTUser::state()
 QString TTTUser::piece()
 {
     return _piece;
-}
-
-void TTTUser::setGameId(int id)
-{
-    if (_gameID != id)
-    {
-        _gameID = id;
-        emit gameIdChanged();
-    }
 }
 
 void TTTUser::setUsername(QString name)

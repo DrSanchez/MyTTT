@@ -8,8 +8,7 @@ enum GameState
     DRAW,
     WIN_X,
     WIN_Y,
-    PLAYING,
-    STARTING
+    PLAYING
 };
 
 enum TileState
@@ -19,35 +18,36 @@ enum TileState
     USED_O
 };
 
-enum Player
-{
-    PLAYER_X,
-    PLAYER_Y
-};
-
 class GameManager : public QObject
 {
     Q_OBJECT
 public:
     explicit GameManager(int gameID, QObject *parent = 0);
 
+    void setXID(int socket);
+    void setOID(int socket);
+
     //game logic prototypes
     bool anyOpen();
     bool gameOverState();
-    bool checkWinDrawCondition(Player p);
-    bool makeMove(Player p, int row, int col);
+    bool checkWinDrawCondition(int player);
+    bool makeMove(int player, int row, int col);
 
 signals:
-    void sendUpdateBoardState(Player p, int row, int col, int xID, int yID);
+    //updates the user who did not make the move
+    void sendUpdateBoardState(int player, int row, int col);
     void sendGameOverNotification(GameState g);
+
+    //error signal, probably wont happen
+    void wrongGameError(int player, int gameID);
 
 public slots:
 
 private:
     //private data members
     int         _gameID;
-    int         _playerXID;
-    int         _playerOID;
+    int         _playerXID;//uses socket id
+    int         _playerOID;//uses socket id
     GameState   _state;
     TileState   _board[3][3];
 

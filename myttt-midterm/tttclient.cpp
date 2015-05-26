@@ -199,6 +199,54 @@ void TTTClient::setLocalTurn(bool turn)
     }
 }
 
+bool TTTClient::acceptChallenge(QString name)
+{
+    bool result = false;
+
+    QJsonObject o;
+    QJsonDocument d;
+    QByteArray b;
+
+    o["CommHeader"] = ACCEPTINVITE;
+    o["Receiver"] = name;
+
+    d.setObject(o);
+    b = d.toJson();
+
+    if (sendAll(b))
+    {
+        result = true;
+    }
+    else
+        qDebug() << "Error sending decline invite to server...";
+
+    return result;
+}
+
+bool TTTClient::declineChallenge(QString name)
+{
+    bool result = false;
+
+    QJsonObject o;
+    QJsonDocument d;
+    QByteArray b;
+
+    o["CommHeader"] = DECLINEINVITE;
+    o["Receiver"] = name;
+
+    d.setObject(o);
+    b = d.toJson();
+
+    if (sendAll(b))
+    {
+        result = true;
+    }
+    else
+        qDebug() << "Error sending decline invite to server...";
+
+    return result;
+}
+
 bool TTTClient::validateServerIp(QString ip, QString username)
 {
     bool result = false;
@@ -212,11 +260,11 @@ bool TTTClient::validateServerIp(QString ip, QString username)
         {
             if(!waitForRequest())
             {//this likely will never occur, due to the uniquifier
-                qDebug() << "Username validation broken?";
                 emit invalidUsername();
                 return false;
             }
-            emit newUser(_localUser->username(), (_localUser->gameId() == -1 ? false : true));
+            //a new user will never be engaged
+            emit newUser(_localUser->username(), false);
             if (requestUserList())
             {
                 //gotta wait to hear back...
@@ -241,7 +289,14 @@ bool TTTClient::validateServerIp(QString ip, QString username)
 
 bool TTTClient::validateMove(int row, int col)
 {
-    return _gameView->validateMove(row, col, _localUser->piece());
+    bool result = false;
+
+    result = _gameView->validateMove(row, col, _localUser->piece());
+
+    if (result)
+        setLocalTurn(false);
+
+    return result;
 }
 
 bool TTTClient::challengeUser(QString challengedUser)
@@ -254,6 +309,10 @@ bool TTTClient::challengeUser(QString challengedUser)
     obj["CommHeader"] = INVITE;
     obj["Inviter"] = _localUser->username();
     obj["Invitee"] = challengedUser;
+
+    //prepare gamehandler with some info, can be overridden in invite declined
+    _gameView->setPlayerX(_localUser->username());
+    _gameView->setPlayerO(challengedUser);
 
     doc.setObject(obj);
     bytes = doc.toJson();
@@ -429,8 +488,24 @@ void TTTClient::processServerResponse()
             handleClientLeft(o);
             break;
         }
+        case CHALLENGED:
+        {
+            handleChallenge(o);
+            break;
+        }
         case CHALLENGEACCEPTED:
         {
+            handleChallengeAccepted(o);
+            break;
+        }
+        case CHALLENGEDECLINED:
+        {
+            handleChallengeDeclined(o);
+            break;
+        }
+        case UPDATEENGAGED:
+        {
+            handleUpdateEngaged(o);
             break;
         }
         default:
@@ -487,11 +562,39 @@ void TTTClient::handleClientLeft(QJsonObject & obj)
     }
 }
 
+void TTTClient::handleReceiveMove(QJsonObject & obj)
+{
+
+}
+
+void TTTClient::handleUpdateEngaged(QJsonObject & obj)
+{
+    //getting usernames
+    QJsonValue val = obj["Users"];
+    QVariant var = val.toVariant();
+    QStringList userList = var.toStringList();
+
+    //getting each user status
+    val = obj["Status"];
+    var = val.toVariant();
+    QStringList statusList = var.toStringList();
+
+    if (userList.length() != statusList.length())
+    {//this shouldn't happen
+        qDebug() << "Userlist did not get built correctly...";
+    }
+    else
+    {
+        for (int i = 0; i < userList.length(); i++)
+            emit updateUserEngaged(userList.at(i), (statusList.at(i) == "true" ? true : false));
+    }
+}
+
 void TTTClient::handleAcceptedClient(QJsonObject & obj)
 {
     qDebug() << "Do we get to handle accept client?";
     QString clientName = obj["Username"].toString();
-qDebug() << _localUser->username() << "between" << clientName;
+
     //we are the accepted client, but our name was not unique, update it with server change
     if (clientName.contains(_localUser->username()) && clientName != _localUser->username())
         _localUser->setUsername(clientName);
@@ -502,6 +605,24 @@ qDebug() << _localUser->username() << "between" << clientName;
         emit newUser(clientName, false);
     }
     //else the local user doesnt do anything except change menus
+}
+
+void TTTClient::handleChallenge(QJsonObject & obj)
+{
+    QString challenger = obj["Challenger"].toString();
+    emit challenged(challenger);
+}
+
+void TTTClient::handleChallengeAccepted(QJsonObject & obj)
+{
+    emit challengeAccepted();
+}
+
+void TTTClient::handleChallengeDeclined(QJsonObject & obj)
+{
+    ChallengeDeclineReason reason = (ChallengeDeclineReason) obj["Reason"].toInt();
+
+    emit challengeDeclined();
 }
 
 void TTTClient::clearBuffer(char * buffer)

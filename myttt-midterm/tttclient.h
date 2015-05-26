@@ -46,6 +46,8 @@ public:
     Q_INVOKABLE bool validateServerIp(QString ip, QString username);
     Q_INVOKABLE bool challengeUser(QString challengedUser);
     Q_INVOKABLE void leaveLobby();
+    Q_INVOKABLE bool acceptChallenge(QString name);
+    Q_INVOKABLE bool declineChallenge(QString name);
 
     //property getters
     bool localTurn();
@@ -58,12 +60,18 @@ signals:
     void addressInfoFailure();
     void serverFailedToConnect();
 
+    //Challenge Accepted! Self-Five!
+    void challengeAccepted();
+    void challengeDeclined();
+    void challenged(QString challenger);
+
     //property signals
     void localTurnChanged();
 
     //server signals
-    void newUser(QString name, bool engaged);
     void removeUser(QString name);
+    void newUser(QString name, bool engaged);
+    void updateUserEngaged(QString name, bool engaged);
 
 public slots:
     //client responses
@@ -96,8 +104,13 @@ private:
 
     //server response methods
     void handleUserList(QJsonObject & obj);
+    void handleChallenge(QJsonObject & obj);
     void handleClientLeft(QJsonObject & obj);
+    void handleReceiveMove(QJsonObject & obj);
+    void handleUpdateEngaged(QJsonObject & obj);
     void handleAcceptedClient(QJsonObject & obj);
+    void handleChallengeAccepted(QJsonObject & obj);
+    void handleChallengeDeclined(QJsonObject & obj);
 
 };
 

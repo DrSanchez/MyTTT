@@ -14,7 +14,7 @@ TTTServer::TTTServer(QObject *parent)
         _basicBuffer[i] = '\0';
     _byteBuffer = new QByteArray();
     _clientList = new QList<ClientObject *>();
-    _gameMap = new QMap<int, GameManager>();
+    _gameMap = new QMap<int, GameManager *>();
     _global = new GlobalUpdateThread(this);
     _global->setAutoDelete(false);
     //tell the thread pool to give us a few threads on deck
@@ -91,8 +91,13 @@ void TTTServer::cleanupServer()
         cleaner = nullptr;
         //go around for next client in list
     }
-    _gameMap->clear();
-    delete _gameMap;
+
+
+    //need to double check this, changed to pointers
+//    _gameMap->clear();
+//    delete _gameMap;
+
+
     _gameMap = nullptr;
     _clientList->clear();
     delete _clientList;
@@ -262,6 +267,17 @@ void TTTServer::processMessage(ClientObject * client)
         case ACCEPTINVITE:
         {
             startGame(client->_socketID, obj);
+            break;
+        }
+        case DECLINEINVITE:
+        {
+            declineInvite(client->_socketID, obj);
+            break;
+        }
+        case MAKEMOVE:
+        {
+            makeMove(client->_socketID, obj);
+            break;
         }
         default:
         {
@@ -279,6 +295,52 @@ void TTTServer::issueGlobalUpdate()
         if (obj->_socketID != _listener)
             _global->addSocket(obj->_socketID);
     QThreadPool::globalInstance()->start(_global);
+}
+
+//called when startGame happens
+void TTTServer::updateEngagedUsers(QString challenger, QString challengee, bool gameStart)
+{
+    QJsonObject o;
+    QJsonDocument d;
+    QStringList users;
+    QStringList status;
+
+    users << challenger << challengee;
+
+    if (gameStart)
+        status << "true" << "true";
+    else
+        status << "false" << "false";
+
+    QVariant var(users), var1(status);
+
+    o["ServerResponse"] = UPDATEENGAGED;
+    o["Users"] = QJsonValue::fromVariant(var);
+    o["Status"] = QJsonValue::fromVariant(var1);
+
+    d.setObject(o);
+    *_byteBuffer = d.toJson();
+    emit issueGlobalUpdate();
+}
+
+void TTTServer::makeMove(int clientSock, QJsonObject & obj)
+{
+
+}
+
+void TTTServer::declineInvite(int clientSock, QJsonObject & obj)
+{//decliner is calling
+    QString receiver = obj["Receiver"].toString();
+    QJsonObject o;
+    QJsonDocument d;
+
+    o["ServerReponse"] = CHALLENGEDECLINED;
+    o["ChallengeDeclineReason"] = USERDECLINE;//let them know it was an error
+    d.setObject(o);
+    *_byteBuffer = d.toJson();
+
+    if (!sendAll(findSocketByName(receiver)))
+        qDebug() << "Error sending to client: " << receiver;
 }
 
 void TTTServer::addUser(int clientSock, QJsonObject & obj)
@@ -377,12 +439,86 @@ void TTTServer::removeUser(int clientSock)
 
 void TTTServer::inviteUser(int clientSock, QJsonObject & obj)
 {
+    //clientSock is challenger
+    QString challenger = obj["Inviter"].toString();
+    QString challengee = obj["Invitee"].toString();
 
+    QJsonObject o;
+    QJsonDocument d;
+
+    o["ServerResponse"] = CHALLENGED;
+    o["Challenger"] = challenger;
+    d.setObject(o);
+
+    int challengedUserSocket = findSocketByName(challengee);
+
+    *_byteBuffer = d.toJson();
+    if (!sendAll(challengedUserSocket))
+    {
+        qDebug() << "Error sending to client: " << challengee;
+        //default action to say declined
+        o.remove("ServerResponse");//clear challenged command
+        o.remove("Challenger");//clear challenger item
+        o["ServerReponse"] = CHALLENGEDECLINED;
+        o["ChallengeDeclineReason"] = ERROR;//let them know it was an error
+        d.setObject(o);
+        *_byteBuffer = d.toJson();
+        if (!sendAll(clientSock))//notifying challenger
+            qDebug() << "Error on the end of: " << challenger;
+    }
 }
 
 void TTTServer::startGame(int clientSock, QJsonObject & obj)
-{
+{//clientSock is caller, responding to challenger
+    QString receiver = obj["Receiver"].toString();
+    static int gameIDHandler = 0;
 
+    while (_gameMap->contains(gameIDHandler))//this loop will usually execute only once
+        ++gameIDHandler;//increment our static id counter
+
+    GameManager * gm = new GameManager(gameIDHandler, this);
+
+    _gameMap->insert(gameIDHandler, gm);
+
+    //player "X" is the challenger
+    int receiverSock = findSocketByName(receiver);
+    gm->setXID(receiverSock);
+
+    //player "O" is the invite accepter
+    gm->setOID(clientSock);
+
+    ClientObject * temp = findClientBySocket(receiverSock);
+    temp->_gameID = gameIDHandler;
+
+    //this game started, let everyone know
+    updateEngagedUsers(receiver, findClientBySocket(clientSock)->_username, true);
+
+    QJsonObject o;
+    QJsonDocument d;
+
+    o["ServerResponse"] = CHALLENGEACCEPTED;
+
+    d.setObject(o);
+    *_byteBuffer = d.toJson();
+
+    //the accepter already knows they are playing, tell the challenger
+    if (!sendAll(receiverSock))
+        qDebug() << "Error sending accept challenge to user: " << receiver;
+}
+
+int TTTServer::findSocketByName(QString name)
+{
+    int found = -1;
+
+    for (ClientObject * obj : *_clientList)
+    {
+        if (obj->_username == name)
+        {
+            found = obj->_socketID;
+            break;
+        }
+    }
+    return found;
 }
 
 ClientObject * TTTServer::findClientBySocket(int clientSock)
@@ -392,7 +528,10 @@ ClientObject * TTTServer::findClientBySocket(int clientSock)
     for (ClientObject * obj : *_clientList)
     {
         if (obj->_socketID == clientSock)
+        {
             found = obj;
+            break;
+        }
     }
 
     return found;

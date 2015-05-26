@@ -21,7 +21,9 @@ enum CommHeader
     LIST,
     LEAVE,
     INVITE,
-    ACCEPTINVITE
+    ACCEPTINVITE,
+    DECLINEINVITE,
+    MAKEMOVE
 };
 
 /* first byte of any server response to client */
@@ -30,14 +32,17 @@ enum ServerResponse
     ACCEPTEDCLIENT,
     USERLIST,
     CLIENTLEFT,
-    CHALLENGEACCEPTED
+    CHALLENGED,
+    CHALLENGEACCEPTED,
+    CHALLENGEDECLINED,
+    RECEIVEMOVE,
+    UPDATEENGAGED
 };
 
-/* commands used when client is ENGAGED */
-enum GameCommands
+enum ChallengeDeclineReason
 {
-    MAKEMOVE
-
+    USERDECLINE,
+    ERROR
 };
 
 /* enumeration for piece */

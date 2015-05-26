@@ -53,7 +53,7 @@ private:
     bool                          _running;
     QByteArray               *    _byteBuffer;
     QList<ClientObject *>    *    _clientList;
-    QMap<int, GameManager>   *    _gameMap;
+    QMap<int, GameManager *>   *    _gameMap;
     GlobalUpdateThread       *    _global;
 
     //unix sockets members
@@ -67,15 +67,19 @@ private:
     //private methods
     void clearBuffer(char * buffer);
     void processMessage(ClientObject * client);
+    void updateEngagedUsers(QString challenger, QString challengee, bool gameStart);
 
     //private command methods
     bool sendAll(int receiver);
-    void addUser(int clientSock, QJsonObject & obj);
     void sendList(int clientSock);
     void removeUser(int clientSock);
-    void inviteUser(int clientSock, QJsonObject & obj);
+    void addUser(int clientSock, QJsonObject & obj);
+    void makeMove(int clientSock, QJsonObject & obj);
     void startGame(int clientSock, QJsonObject & obj);
+    void inviteUser(int clientSock, QJsonObject & obj);
+    void declineInvite(int clientSock, QJsonObject & obj);
 
+    int findSocketByName(QString name);
     ClientObject * findClientBySocket(int clientSock);
 
 };

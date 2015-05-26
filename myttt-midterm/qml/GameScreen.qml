@@ -46,11 +46,14 @@ Rectangle
 
                     onActivated:
                     {
-                        var row = (index % 3);
-                        var col = (index - row) / 3;
-                        if (Client.validateMove(row, col))
+                        if (Client.localTurn)
                         {
-                            state = LocalUser.piece;
+                            var row = (index % 3);
+                            var col = (index - row) / 3;
+                            if (Client.validateMove(row, col))
+                            {
+                                state = LocalUser.piece;
+                            }
                         }
                     }
                 }
@@ -84,7 +87,7 @@ Rectangle
         anchors.rightMargin: parent.width * 0.005
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        //visible: Client.localTurn
+        visible: Client.localTurn
     }
 
     Rectangle

@@ -9,8 +9,7 @@ enum GameState
     DRAW,
     WIN_X,
     WIN_Y,
-    PLAYING,
-    STARTING
+    PLAYING
 };
 
 enum TileState
@@ -18,12 +17,6 @@ enum TileState
     OPEN,
     USED_X,
     USED_O
-};
-
-enum Player
-{
-    PLAYER_X,
-    PLAYER_Y
 };
 
 class GameHandler : public QObject
@@ -34,17 +27,24 @@ public:
 
     bool validateMove(int row, int col, QString symbol);
 
+    GameState getState();
+
+    void setPlayerX(QString name);
+    void setPlayerO(QString name);
+    void setGameState(GameState state);
+
+    QString getSymbolByPlayerName(QString name);
+
 signals:
+    //client will add the
+    void notifyServerOfMove(int row, int col);
 
 public slots:
     
 private:
     //private data members
-    int         _associatedGameID;
-    int         _playerXID;
-    int         _playerOID;
     QString     _playerXName;
-    QString     _playerYName;
+    QString     _playerOName;
     GameState   _lastState;
     TileState   _boardView[3][3];
 

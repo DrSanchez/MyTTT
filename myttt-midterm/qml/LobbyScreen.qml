@@ -39,6 +39,23 @@ Rectangle
                 userListModel.remove(index);
         }
 
+        onUpdateUserEngaged:
+        {
+            var index = 0;
+            var found = false;
+
+            for (index; index < userListModel.count && found == false; index++)
+            {
+                var user = userListModel.get(index);
+                if (user.username == name)
+                {
+                    user.engagedFlag = engaged;
+                    found = true;
+                    break;
+                }
+            }
+        }
+
         onResetUserList:
         {
             userListModel.clear();
@@ -70,6 +87,62 @@ Rectangle
         }
     }
 
+    Connections
+    {
+        target: Client
+
+        //only challenger will receive this signal
+        onChallengeAccepted://challengee knows they accepted
+        {
+            //challenger is always "X"
+            LocalUser.piece = "X";
+            Client.localTurn = true;
+            mainContainer.nextAppState = "GAME";
+        }
+
+        onChallengeDeclined:
+        {
+            mainContainer.nextAppState = "LOBBY";
+        }
+
+        onChallenged:
+        {
+            userListViewContainer.receivedChallenge(challenger)
+        }
+    }
+
+    //only the challenged user will use these connections
+    Connections
+    {
+        target: infoDialog
+
+        //we need to notify challenger we said yes
+        onClickedYes:
+        {
+            //opponent param tells client who we are talking to
+            if (Client.acceptChallenge(gameScreen.opponent))
+            {
+                //receiver of challenge is always "O"
+                LocalUser.piece = "O";
+                Client.localTurn = false;
+                mainContainer.nextAppState = "GAME";
+            }
+            //else error on send data
+        }
+
+        //we need to notify challenger we said no
+        onClickedNo:
+        {
+            //opponent param tells client who we are talking to
+            if (Client.declineChallenge(gameScreen.opponent))
+            {
+                //pretty much do nothing - ensure we are at lobby
+                mainContainer.nextAppState = "LOBBY";//commonly this does nothing
+            }
+            //else error on send data
+        }
+    }
+
     Rectangle
     {
         id: userListViewContainer
@@ -89,23 +162,26 @@ Rectangle
         {
             if (Client.challengeUser(userToChallenge))
             {//pop wait on invite message
+                infoDialog.showBox(1, "Challenge Wait", "Waiting for response from " +
+                                   userToChallenge);
+                //the challenger will be notified by a client signal from server
 
-                //challenger is always "X"
-                LocalUser.piece = "X";
-                //if receive response
-                    //true == open game screen
-                //else
-                    //false == close message and return to lobby
-                mainContainer.nextAppState = "GAME";
+                //we can safely set this, because if declined, no one sees this
+                gameScreen.opponent = userToChallenge;//and it will be set again if challenged
+                //also this is useful for having the data around
             }
         }
 
         //challenger will never call this
         function receivedChallenge(challenger)
         {
-            //receiver of challenge is always "O"
-            LocalUser.piece = "O";
-            mainContainer.nextAppState = "GAME";
+            infoDialog.yesNoBox("Challenged!", "You have been challenged to a game" +
+                                " of Tic-Tac-Toe by " + challenger);
+            //box will emit signal, this is essentially a blocking ui call
+
+            //we can safely set this, because if declined, no one sees this
+            gameScreen.opponent = challenger;//and it will be set again if challenged
+            //also this is useful for having the data around
         }
 
         ListView

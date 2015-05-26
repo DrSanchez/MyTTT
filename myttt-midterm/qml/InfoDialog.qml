@@ -14,8 +14,12 @@ Rectangle
     property string alertMessage: ""
     property string alertTitle: ""
 
+    signal clickedYes
+    signal clickedNo
+
     function showBox(level, title, message)
     {
+        //if ()
         transparencyContainer.alertLevel = level;
         if (level == 1)
             alertLevelIconContainer.source = "../images/information_icon.png";
@@ -27,6 +31,17 @@ Rectangle
         transparencyContainer.alertTitle = title;
         transparencyContainer.alertMessage = message;
         transparencyContainer.visible = true;
+        applicationShadingAnimationIn.start();
+    }
+
+    function yesNoBox(title, message)
+    {
+        //yes/no question will be considered informational to user
+        transparencyContainer.alertLevel = 1;
+        alertLevelIconContainer.source = "../images/information_icon.png";
+        transparencyContainer.alertTitle = title;
+        transparencyContainer.alertMessage = message;
+        yesButton.visible = true;//need to show/activate yes button
         applicationShadingAnimationIn.start();
     }
 
@@ -147,7 +162,34 @@ Rectangle
 
         GeneralButton
         {
-            id: okButton
+            id: yesButton
+            height: parent.height * 0.18
+            width: parent.width * 0.22
+            anchors.right: okButton.left
+            anchors.rightMargin: parent.width * 0.12
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: parent.height * 0.12
+            pText: "Yes"
+            visible: false //default behavior does not involve yes/no response
+
+            MouseArea
+            {
+                anchors.fill: parent
+                onClicked:
+                {
+                    if (yesButton.visible == true)
+                    {
+                        transparencyContainer.clickedYes();
+                        transparencyContainer.hideBox();
+                        yesButton.visible = false;
+                    }
+                }
+            }
+        }
+
+        GeneralButton
+        {
+            id: okButton //sometimes this is "noButton"
             height: parent.height * 0.18
             width: parent.width * 0.22
             anchors.right: parent.right
@@ -159,7 +201,15 @@ Rectangle
             MouseArea
             {
                 anchors.fill: parent
-                onClicked: transparencyContainer.hideBox();
+                onClicked:
+                {
+                    if (okButton.pText == "No")
+                    {
+                        transparencyContainer.clickedNo();
+                        okButton.pText = "OK"; //return to default info behavior
+                    }
+                    transparencyContainer.hideBox();
+                }
             }
         }
     }
